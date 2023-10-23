@@ -1,8 +1,8 @@
--- cleaning data in sql queries
+-- Cleaning data in sql queries
 select *
 from housing 
 
--- standarize date formate
+-- standarizinf date formate
 update housing
 set saledate = str_to_date(saledate,"%M %d,%Y");
 
@@ -21,13 +21,14 @@ join housing b
 	and a.uniqueid <> b.uniqueid 
 where a.propertyaddress is null
 
-update housing a -- idk what happened even though most of my codes had errors but somehow updated the table 
+-- updated the table 
+update housing a 
 join housing b
 	on a.parcelid = b.parcelid
     and a.uniqueid <> b.uniqueid
 set a.propertyaddress =  coalesce(a.propertyaddress,b.propertyaddress)
 
--- breaking out address into individual columns (address, city, state)
+-- breaking out addresses into individual columns (address, city, state)
 
 select propertyaddress
 from housing 
@@ -50,7 +51,7 @@ from housing
 
 select * from housing 
 
--- parse name: mysql doesn't have parsename function 
+-- parse name: mysql doesn't have parse name function 
 -- split owneraddress with substring_index 
 select owneraddress 
 from housing
@@ -80,7 +81,7 @@ add OwnerState nvarchar(255);
 update housing
 set OwnerState = substring_index(owneraddress,",",-1)
 
--- change y  and n to yes and no in "Sold as Vacant" field
+-- changing y  and n to yes and no in "Sold as Vacant" field
 
 select  distinct soldasvacant, count(soldasvacant) 
 from housing 
@@ -100,6 +101,7 @@ case
 	when trim(soldasvacant) = "N" then "No"
     else soldasvacant 
 END;
+
 -- remove duplicates 
 -- mySQL does not allow to update or delete CTE
 with RowNumCTE as(
@@ -128,7 +130,7 @@ From housing
                   --  p2.UniqueID < p1.UniqueID);
                   
 -- delete unused columns 
--- in mysql, you have to specify "drop column" for every column. you cannot just do it all in once 
+-- in mysql, you have to specify "drop column" for every column. you cannot just do it all at once 
 select * from housing 
 alter table housing
 drop column taxdistrict, 

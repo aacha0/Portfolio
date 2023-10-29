@@ -1,0 +1,106 @@
+-- replace empty cells on customer_orders with null 
+update pizza_runner.customer_orders 
+set exclusions = nullif(nullif(exclusions, ''),'null'),
+	extras = nullif(nullif(extras, ''),'null');
+
+-- replace NaN with null on runner_orders with null 
+update pizza_runner.runner_orders 
+set cancellation = null
+where cancellation  = 'NaN' and cancellation = 'null';
+
+-- replace empty cells with null on runner_orders with null 
+update pizza_runner.runner_orders 
+set cancellation = nullif(nullif(cancellation,''),'null');
+
+-- remove the units to make it easier for later calculations
+update pizza_runner.runner_orders 
+set distance  = replace(distance, 'km', ''),
+	duration  = replace(replace(replace(duration, 'minutes', 	''),'minute',''),'mins',''); 
+select * from pizza_runner.runner_orders ;
+
+-- How many pizzas were ordered?
+select count(order_id) total_pizzas from pizza_runner.customer_orders;
+
+-- How many unique customer orders were made?
+select count(distinct order_id) total_pizzas
+from pizza_runner.customer_orders; 
+
+-- How many successful orders were delivered by each runner?
+select 
+sum(case when cancellation is null then 1
+    else 0 end) successful_orders
+from pizza_runner.runner_orders;
+             
+-- How many of each type of pizza was delivered?
+select pizza_id, count(*) successful_delivered
+from pizza_runner.customer_orders c
+join pizza_runner.runner_orders r
+on c.order_id = r.order_id 
+where r.cancellation is null 
+group by pizza_id ; 
+
+-- How many Vegetarian and Meatlovers were ordered by each customer?
+select customer_id, 
+sum(case when c.pizza_id = 1 then 1 else 0 end) meatlovers_pizzas_qty,
+sum(case when c.pizza_id = 2 then 1 else 0 end) vegetarian_pizzas_qty
+from pizza_runner.customer_orders c
+join pizza_runner.pizza_names p
+on c.pizza_id = p.pizza_id 
+group by customer_id
+order by customer_id; 
+
+-- What was the maximum number of pizzas delivered in a single order?
+with rank as(select order_id, count(*), 
+dense_rank() over(order by count(order_id) desc) rank
+from pizza_runner.customer_orders 
+group by order_id )
+select order_id, count as max_number_single_order 
+from rank 
+where rank = 1; 
+
+
+-- For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
+select c.customer_id,
+sum(case when exclusions is not null or extras is not null then 1 else 0 end)  at_least_one_change,
+sum(case when exclusions is null and extras is  null then 1 else 0 end) 
+no_change
+from pizza_runner.customer_orders c
+join pizza_runner.runner_orders r
+on c.order_id = r.order_id 
+where r.cancellation is null 
+group by customer_id
+order by customer_id; 
+
+
+-- How many pizzas were delivered that had both exclusions and extras?
+select count(*) exclusions_and_extras
+from pizza_runner.customer_orders c
+join pizza_runner.runner_orders r
+on c.order_id = r.order_id 
+where r.cancellation is null and extras is not null and exclusions is not null 
+;
+-- What was the total volume of pizzas ordered for each hour of the day?
+select cast(date_trunc('hour', order_time) as time) as hour, count(*)
+from pizza_runner.customer_orders 
+group by hour 
+order by hour;
+
+
+
+-- What was the volume of orders for each day of the week?
+with day as(
+select*, 
+case when extract(dow from order_time) = 1 then 'Mon'
+when extract(dow from order_time) = 2 then 'Tue'
+when extract(dow from order_time) = 3 then 'Wed'
+when extract(dow from order_time) = 4 then 'Thur'
+when extract(dow from order_time) = 5 then 'Fri'
+when extract(dow from order_time) = 6 then 'Sat'
+else 'Sun' 
+end as day_of_the_week
+from pizza_runner.customer_orders )
+
+select day_of_the_week, count(*)
+from day 
+group by day_of_the_week,extract(dow from order_time) 
+order by extract(dow from order_time)

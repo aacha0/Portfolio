@@ -970,5 +970,26 @@ There are no results to be displayed.
 | 104         | Meatlovers - Exclude BBQ Sauce- Extra Bacon Cheese |
 
 ---
+with cte as (
+     select order_id, 
+   customer_id, 
+   c.pizza_id,
+   pizza_name,
+   toppings,
+   substring_index(exclusions,',',1) exclu1,
+   case when length(exclusions) >1 then substring_index(exclusions,',',-1) else null end exclu2, 
+ substring_index(extras,',',1)extra1,
+  case when length(extras)>1 then substring_index(extras,',',-1) else null end extra2
+     from customer_orders c
+     join pizza_recipes r
+     on c.pizza_id = r.pizza_id
+   	join pizza_names n
+   on c.pizza_id = n.pizza_id
+)
+select *, 
+concat((case when exclu2 is not null then replace((case when exclu1 is not null then replace(toppings, exclu1, '') else toppings end), exclu2, '') else (case when exclu1 is not null then replace(toppings, exclu1, '') else toppings end) end), ', ',case when exclu1 is not null then exclu1 else ''end,case when exclu2 is not null then concat(',',exclu2) else ''end)    
+from cte 
+ 
 
+     
 [View on DB Fiddle](https://www.db-fiddle.com/f/7VcQKQwsS3CTkGRFG7vu98/65)

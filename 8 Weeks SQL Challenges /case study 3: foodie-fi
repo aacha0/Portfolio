@@ -961,7 +961,7 @@
 | 195                |
 
 ---
-**Query #9**
+ **Query #9**
 
     with cte as(
     select distinct customer_id, 
@@ -969,4 +969,108 @@
     min(start_date) over(partition by customer_id) min,
     datediff(max(start_date) over(partition by customer_id),min(start_date) over(partition by customer_id)) diff 
     from subscriptions 
- 
+    where customer_id in (select customer_id from subscriptions where plan_id =3) and plan_id < 4 ) 
+
+    select round(avg(diff),2) avg_days 
+    from cte ;
+
+| avg_days |
+| -------- |
+| 104.62   |
+
+---
+**Query #10**
+
+    with cte as(
+      select distinct customer_id, 
+      min(start_date) over(partition by customer_id) min,
+      datediff(max(start_date) over(partition by customer_id),min(start_date) over(partition by customer_id)) diff 
+      from subscriptions 
+      where customer_id in (select customer_id from subscriptions where plan_id =3) and plan_id < 4 
+    ),
+    bound as(
+    select *, floor(diff/30)*30 lower, 
+    case when diff%30 = 0 then ceiling(diff/30)*30+30
+    else ceiling(diff/30)*30 end upper
+    from cte),
+    period as (
+      select *, concat(lower, ' - ',upper)period from bound
+      ) 
+
+
+    select period, count(*) cnt_upgrade_annual_plan
+    from period 
+    group by period,lower 
+    order by lower;
+
+| period    | cnt_upgrade_annual_plan |
+| --------- | ----------------------- |
+| 0 - 30    | 48                      |
+| 30 - 60   | 25                      |
+| 60 - 90   | 33                      |
+| 90 - 120  | 35                      |
+| 120 - 150 | 43                      |
+| 150 - 180 | 35                      |
+| 180 - 210 | 27                      |
+| 210 - 240 | 4                       |
+| 240 - 270 | 5                       |
+| 270 - 300 | 1                       |
+| 300 - 330 | 1                       |
+| 330 - 360 | 1                       |
+
+---
+**Query #11**
+
+    with cte as(
+    select customer_id, start_date, plan_id,lead(plan_id, 1) over(partition by customer_id order by start_date) next_plan,
+    datediff(lead(start_date, 1) over(partition by customer_id), start_date) date_diff
+    from subscriptions 
+    where start_date between '2020-01-01' and '2020-12-31')
+
+
+
+    select 
+    sum(case when plan_id=2 and next_plan=1 then 1 else 0 end) switch_plan, 
+    sum(case when plan_id =0 and next_plan =1 and date_diff>7 then 1 else 0 end) did_not_switch_out_plan_after_trial, 
+    sum(case when plan_id =0 and next_plan =1 and date_diff=7 then 1 else 0 end) switch_from_trial_to_basix
+    from cte
+    ;
+
+| switch_plan | did_not_switch_out_plan_after_trial | switch_from_trial_to_basix |
+| ----------- | ----------------------------------- | -------------------------- |
+| 0           | 0                                   | 538                        |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/rHJhRrXy5hbVBNJ6F6b9gJ/16)
+with year as (
+select customer_id, s.plan_id, plan_name, start_date,price
+from subscriptions s
+join plans p
+on s.plan_id = p.plan_id
+where year(start_date) = '2020' and s.plan_id !=0  
+order by customer_id, s.plan_id ),
+  end_date as(
+  select customer_id, plan_id, plan_name, start_date,
+  case when plan_id != 4 and lead(start_date,1)over(partition by customer_id) is null then '2020-12-31' 
+  else lead(start_date,1)over(partition by customer_id) end as end_date,price
+from year) 
+
+select * 
+from end_date
+jOIN (
+        SELECT 0 as n UNION ALL
+        SELECT 1 as n UNION ALL
+        SELECT 2 as n UNION ALL
+        SELECT 3 as n UNION ALL
+        SELECT 4 as n UNION ALL
+        SELECT 5 as n UNION ALL
+        SELECT 6 as n UNION ALL
+        SELECT 7 as n UNION ALL
+        SELECT 8 as n UNION ALL
+        SELECT 9 as n UNION ALL
+        SELECT 10 as n UNION ALL
+        SELECT 11 as n UNION ALL
+        SELECT 12 as n
+      ) as n
+      ON n.n <= 12

@@ -1,0 +1,45 @@
+-- How many unique nodes are there on the Data Bank system?
+select count(distinct node_id) 
+from customer_nodes ;
+-- What is the number of nodes per region?
+select region_name, count(distinct node_id)
+from customer_nodes 
+join regions 
+using(region_id)
+group by region_name
+order by region_name ; 
+
+-- How many customers are allocated to each region?
+select region_name, count(distinct customer_id) num_customer
+from customer_nodes
+join regions 
+using(region_id)
+group by region_name
+order by region_name;
+
+
+-- How many days on average are customers reallocated to a different node?
+with cte as (
+select customer_id, region_id, node_id, 
+lead(node_id,1)over(partition by customer_id order by start_date) next, start_date, end_date
+from customer_nodes order by customer_id ),
+cte1 as(
+  select *, 
+  datediff(end_date,start_date) diff
+  from cte
+	where end_date <> '9999-12-31'),
+    cte2 as(
+      select *,
+      case when node_id = next then null
+      else diff end as diff1 
+      from cte1
+      order by customer_id, start_date)
+select *,
+case when lag(diff1,1)over(partition by customer_id order by start_date) is null and customer_id = lag(customer_id,1)over(order by start_date) then diff1+lag(diff,1)over(partition by customer_id order by start_date) else diff1 end diff2
+from cte2                                                                                                               
+                                                                                          
+                                                                                                                    
+
+
+
+-- What is the median, 80th and 95th percentile for this same reallocation days metric for each region?

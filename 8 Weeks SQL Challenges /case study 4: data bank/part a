@@ -3,6 +3,7 @@
 ---
 
 **Query #1**
+-- Q: How many unique nodes are there on the Data Bank system?
 
     select count(distinct node_id) 
     from customer_nodes ;
@@ -13,7 +14,7 @@
 
 ---
 **Query #2**
-
+-- Q: What is the number of nodes per region?
     select region_name, count(distinct node_id)
     from customer_nodes 
     join regions 
@@ -31,7 +32,7 @@
 
 ---
 **Query #3**
-
+-- Q: How many customers are allocated to each region?
     select region_name, count(distinct customer_id) num_customer
     from customer_nodes
     join regions 
@@ -49,7 +50,7 @@
 
 ---
 **Query #4**
-
+-- Q: How many days on average are customers reallocated to a different node?
     with cte as (
     select customer_id, region_id, node_id, 
     lead(node_id,1)over(partition by customer_id order by start_date) next, start_date, end_date

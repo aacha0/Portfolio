@@ -2,6 +2,7 @@
 ---
 
 **Query #1**
+-- Q: What is the unique count and total amount for each transaction type?
 
     select txn_type, sum(txn_amount) total_amount,count(*) cnt_transaction
     from customer_transactions 
@@ -15,6 +16,8 @@
 
 ---
 **Query #2**
+-- Q: What is the average total historical deposit counts and amounts for all customers?
+
 
     with cte as (
     select count(*)count, avg(txn_amount) avg_total
@@ -32,6 +35,7 @@
 
 ---
 **Query #3**
+-- Q: For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 withdrawal in a single month
 
     with cte as(
       select month(txn_date) month, customer_id, count(customer_id) 
@@ -72,6 +76,8 @@
 
 ---
 **Query #4**
+-- Q: What is the closing balance for each customer at the end of the month?
+
 
     with cte as (
     select customer_id, month(txn_date)month,
@@ -105,6 +111,7 @@
 
 ---
 **Query #5**
+-- Q: What is the percentage of customers who increase their closing balance by more than 5%?
 
     with cte as (
     select customer_id, month(txn_date)month,

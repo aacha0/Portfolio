@@ -1,0 +1,96 @@
+---
+title: "candy crush"
+output: html_document
+date: "2023-11-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# This sets the size of plots to a good default.
+options(repr.plot.width = 5, repr.plot.height = 4)
+
+# Loading in packages
+library(readr)
+library(dplyr)
+library(ggplot2)
+```
+##The data set##
+The dataset we will use contains one week of data from a sample of players who played Candy Crush back in 2014. The data is also from a single episode, that is, a set of 15 levels. It has the following columns:
+
+player_id: a unique player id
+dt: the date
+level: the level number within the episode, from 1 to 15.
+num_attempts: number of level attempts for the player on that level and date.
+num_success: number of level attempts that resulted in a success/win for the player on that level and date.
+The granularity of the dataset is player, date, and level. That is, there is a row for every player, day, and level recording the total number of attempts and how many of those resulted in a win.
+
+```{r}
+data <- read_csv('/Users/AmandaLin/Downloads/R-portfolio/candy_crush.csv')
+#read.csv has a number of problems which the new read_csv function avoids 
+head(data)
+```
+##Checking the data set##
+```{r}
+cat('number of players:',num_players) 
+
+```
+```{r}
+print('period of data:') 
+print(range(data$dt))
+```
+##Computing level difficulty##
+###Bernoulli process###
+
+```{r}
+difficulty <- data %>%
+  group_by(level) %>% 
+  summarise(attempts = sum(num_attempts),wins = sum(num_success)) %>%
+  mutate(p_win = wins/attempts)
+head(difficulty)
+```
+##Plotting difficulty profile as line graph##
+```{r}
+ggplot(difficulty,aes(x=level,y=p_win))+
+  geom_line()+
+  scale_x_continuous(breaks = 1:15)+ #our data is from level 1 to level 15 
+  scale_y_continuous(label = scales::percent) #makes the y-axis to be percentage
+                       
+```
+##Spotting hard level##
+###threashholdof difficulty = 10%###
+```{r}
+ggplot(difficulty, aes(x=level,y=p_win))+
+  geom_line()+
+  geom_point(color = 'blue')+
+    geom_hline(yintercept = 0.1,linetype = 3,color='purple') #dashline is num3 in linetype
+  scale_x_continuous(breaks = 1:15)+
+  scale_y_continuous(label = scales::percent)
+```
+
+##Computing uncertainty##
+###calculate standard error##
+```{r}
+difficulty <- difficulty %>%
+  mutate(error = sqrt(p_win*(1-p_win)/attempts))
+head(difficulty)
+```
+##Showing the uncertainty on the graph##
+
+```{r}
+ggplot(difficulty, aes(x=level, y=p_win))+
+  geom_line()+
+  geom_point(color = 'blue')+
+  geom_errorbar(aes(ymin=p_win-error,ymax = p_win+error))+
+  geom_hline(yintercept=0.1,linetype=3,color = 'purple')+
+  scale_x_continuous(breaks = 1:15)+
+  scale_y_continuous(label = scales::percent)
+```
+##Finding the possibility of a player complete the episode without losing a single time##
+```{r}
+p<-prod(difficulty$p_win) #prod function multiplies all the number in a vector together 
+p
+```
+

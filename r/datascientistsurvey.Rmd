@@ -1,0 +1,108 @@
+---
+title: "data scientist survey"
+output: html_document
+date: "2023-11-08"
+---
+```{r}
+library(tidyverse)
+library(ggpubr)
+library(here)
+library(skimr)
+library(janitor)
+library(lubridate)
+library(ggrepel)
+```
+#load the data and print the first 10 rows
+```{r}
+responses <- read_csv("/Users/AmandaLin/Downloads/multipleChoiceResponses.csv")
+head(responses, 10)
+```
+#extract the needed columns 
+
+```{r}
+data <- responses %>%
+  select(WorkToolsSelect,LanguageRecommendationSelect,EmployerIndustry,WorkAlgorithmsSelect)
+data <- data %>%   
+  mutate(Respondent = row_number())%>%
+  relocate(Respondent)
+```
+#focus on the tools and language that the survey respondents use at work 
+#split the worktoolselect by comma
+
+
+```{r}
+tools <-data %>%
+  mutate(work_tools = str_split(WorkToolsSelect,',')) %>%
+  unnest(work_tools)
+
+head(tools)
+  
+  
+```
+#most popular tools 
+```{r}
+tool_count <- tools %>%
+  group_by(work_tools) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+head(tool_count)
+```
+
+#create a plot to show the most popular tools
+```{r}
+ggplot(tool_count, aes(x=fct_reorder(work_tools,count),y=count))+
+  geom_bar(stat = 'identity')+
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+  xlab('Tools')
+```
+
+# Within the field of data science, there is a lot of debate among professionals about whether R or Python should reign supreme. You can see from our last figure that R and Python are the two most commonly used languages, but it's possible that many respondents use both R and Python. Let's take a look at how many people use R, Python, and both tools.
+#create a new column called language preference
+
+```{r}
+debate_tools <- data %>%
+  mutate(language_preference = 
+           case_when(
+    str_detect(WorkToolsSelect,'R') &! str_detect(WorkToolsSelect,'Python') ~'R',
+        str_detect(WorkToolsSelect,'Python') &! str_detect(WorkToolsSelect,'R') ~'Python',
+    str_detect(WorkToolsSelect,'R') & str_detect(WorkToolsSelect,'Python') ~'Both',
+    TRUE ~ 'Neither'
+  ))
+
+head(debate_tools)
+```
+
+#plot the responses with python, r, or both
+```{r}
+debate_plot <- debate_tools %>%
+  group_by(language_preference) %>%
+  filter(language_preference!='Neither')%>%
+  summarise(count=n())
+ggplot(debate_plot,aes(x=fct_reorder(language_preference, count),y=count))+
+  geom_bar(stat = 'identity')+
+  xlab('R or Python')
+```
+#Language Recommendation#
+#Do R or Python lover usually recommend their favorite language to new learners? 
+```{r}
+recommendations <- debate_tools %>%
+  group_by(language_preference,LanguageRecommendationSelect) %>%
+  summarise(count = n())%>%
+  arrange(language_preference,desc(count))%>%
+  mutate(row=row_number()) %>%
+  filter(row <= 4)
+
+recommendations
+
+
+
+```
+
+#Plot the recommendations to be a graph
+```{r}
+ggplot(recommendations, aes(x = LanguageRecommendationSelect, y=count))+
+  geom_bar(stat='identity')+
+  facet_wrap(~language_preference)
+```
+

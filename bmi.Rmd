@@ -1,0 +1,192 @@
+---
+title: "BMI"
+output: html_document
+date: "2023-11-09"
+---
+```{r}
+install.packages("NHANES")
+
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Loading packages##
+###Survey of BMI and physical activity##
+```{r}
+library(nhanesA)
+library(dplyr)
+library(ggplot2)
+library(survey)
+library(broom)
+```
+
+```{r}
+data('NHANESraw')
+glimpse(NHANESraw)
+```
+##Visualizing survey weight and strata variables##
+###Since NHANESraw data spans 4 years (2009–2012) and the sampling weights are based on 2 years of data, we first need to create a weight variable that scales the sample across the full 4 years. Currently the weights sum to 2 times the US population number, so we need to divide the 2-year weight in half so that in total, the sum of the weights is equal to the US population.###
+```{r}
+# Use mutate to create a 4-year weight variable and call it WTMEC4YR
+NHANESraw <- NHANESraw %>%
+  mutate(WTMEC4YR = WTMEC2YR/2)
+# Calculate the sum of this weight variable
+NHANESraw %>% summarize(sum(WTMEC4YR))
+# Plot the sample weights using boxplots, with Race1 on the x-axis
+ggplot(NHANESraw, aes(x=Race1,y=WTMEC4YR))+
+  geom_boxplot()
+```
+##Specifying the survey design## \
+###using survey package to specify the complex survey design### \
+###specifying the design so the sampling weights and design are used properly in the statistcal modesl###
+
+```{r}
+nhanes_design <- svydesign(
+  data = NHANESraw, 
+  strata = ~SDMVSTRA, #strata variable SDMVSTRA
+  id = ~SDMVPSU, 
+  #cluster id variable accounts for design effects of clustering. These clusters are nested within strata
+  nest = TRUE,
+  weights = ~WTMEC4YR
+)
+
+
+summary(nhanes_design)
+```
+##Subsetting the data## \
+###Analysis of survey data requires careful consideration of the sampling design and weights at every step. Something as simple as filtering the data becomes complicated when weights are involved.
+
+When we wish to examine a subset of the data (i.e. the subpopulation of adult Hispanics with diabetes, or pregnant women), we must explicitly specify this in the design. We cannot simply remove that subset of the data through filtering the raw data because the survey weights will no longer be correct and will not add up to the full US population.
+
+BMI categories are different for children and young adults younger than 20 so we will subset the data to only analyze adults of at least 20 years of age.###
+```{r}
+nhanes_adults <- 
+  subset(nhanes_design, Age >=20)
+summary(nhanes_adults)
+
+# Compare the number of observations in the full data to the adult data
+nrow(nhanes_design)
+nrow(nhanes_adults)
+```
+##Visualizing BMI##
+###estimating average BMI in the US adult population and also draw a weighted histogram of the disribution###
+```{r}
+#calculate the mean BMI in NHANESraw
+bmi_mean_raw <- NHANESraw %>%
+  filter(Age >= 20) %>%
+  summarize(mean(BMI,na.rm=TRUE)) #remove all na data
+bmi_mean_raw
+
+
+```
+
+```{r}
+#calculate the survey-weighted mean BMI of US adults 
+bmi_mean <- svymean(~BMI, design = nhanes_adults,na.rm = TRUE)
+bmi_mean 
+```
+```{r}
+NHANESraw %>%
+  filter(Age>=20) %>%
+  ggplot(mapping = aes(x=BMI,weight = WTMEC4YR))+
+  geom_histogram()+
+  geom_vline(xintercept = coef(bmi_mean),color='red')
+```
+
+##Q: Is BMI lower in physically active people?##
+```{r}
+#make a boxplot of BMI stratified by physically active status
+NHANESraw %>%
+  filter(Age>=20) %>%
+  ggplot(mapping = aes(PhysActive, y=BMI, weight=WTMEC4YR))+
+  geom_boxplot()
+```
+```{r}
+#conduct a t-test comparing mean BMI between physically active status
+survey_ttest <- svyttest(BMI~PhysActive, design = nhanes_adults)
+tidy(survey_ttest)
+```
+##Is smoking also a confounding variable##
+```{r}
+# show the relationship between smoking status and physically active status
+# estimate the proportion who are physically active by current smoking status
+phys_by_smoke <- svyby(~PhysActive, by = ~SmokeNow, 
+                       FUN = svymean, 
+                       design = nhanes_adults, 
+                       keep.names = FALSE)
+
+# print the table
+phys_by_smoke
+
+# [lot the proportions 
+ggplot(data = phys_by_smoke, 
+       aes(x = SmokeNow, y = PhysActiveYes, fill = SmokeNow)) +
+        geom_col()+
+        ylab('Proportion Physically Active')
+
+```
+##Examine the relationship between smoking with BMI##
+```{r}
+# estimate mean BMI by current smoking status
+BMI_by_smoke <- svyby(~BMI, by= ~SmokeNow,
+                      FUN=svymean,
+                      design = nhanes_adults,
+                      na.rm = TRUE)
+BMI_by_smoke
+
+# plot the distribution of BMI by current smoking status
+NHANESraw %>% 
+  filter(Age>=20, !is.na(SmokeNow)) %>% 
+    ggplot(mapping =  aes(x = SmokeNow,y=BMI,weight = WTMEC4YR))+
+    geom_boxplot()
+
+```
+##Adding smoking in the mix##\
+```{r}
+NHANESraw %>%
+  filter(Age >=20) %>%
+  ggplot(mapping = aes(x=SmokeNow,
+                       y=BMI,
+                       weight = WTMEC4YR,
+                       color = PhysActive))+
+  geom_boxplot()
+```
+##Incorporating possible confounding in the model##
+```{r}
+# Fit a multiple regression model
+mod1 <- svyglm(BMI~PhysActive*SmokeNow, design = nhanes_adults)
+
+# Tidy the model results
+tidy_mod1 <- tidy(mod1)
+tidy_mod1
+
+# Calculate expected mean difference in BMI for activity within non-smokers
+diff_non_smoke <- tidy_mod1 %>% 
+    filter(term == 'PhysActiveYes') %>% 
+    select(estimate)
+diff_non_smoke
+
+# Calculate expected mean difference in BMI for activity within smokers
+diff_smoke <- tidy_mod1 %>% 
+    filter(term %in% c('PhysActiveYes', 'PhysActiveYes:SmokeNowYes')) %>% 
+    summarize(estimate = sum(estimate))
+diff_smoke
+```
+##Conclusions##
+###We fit a linear regression model where the association of physical activity with BMI could vary by smoking status. The interaction between physical activity and smoking has a small p-value, which suggests the association does vary by smoking status. The difference between physically active and non-physically active people is larger in magnitude in the non-smoker population.
+
+We should check the model fit and technical assumptions of our regression model. Then, we can conclude that physically active people tend to have lower BMI, as do smokers. Although they have similar effect sizes, we probably wouldn't want to recommend smoking along with exercise!
+
+In order to determine whether physical activity causes lower BMI, we would need to use causal inference methods or a randomized control study. We can adjust for other possible confounders in our regression model to determine if physical activity is still associated with BMI, but we fall short of confirming that physical activity itself can lower one's BMI.###
+```{r}
+# Adjust mod1 for other possible confounders
+mod2 <- svyglm(BMI ~ PhysActive*SmokeNow + Race1 + Alcohol12PlusYr + Gender, 
+               design = nhanes_adults)
+
+# Tidy the output
+tidy(mod2)
+```
+

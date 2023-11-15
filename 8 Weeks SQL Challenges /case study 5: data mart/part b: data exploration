@@ -1,0 +1,217 @@
+---
+
+**Query #1**
+ # Q1: What day of the week is used for each week_date value?
+    select distinct dayname(week_date) day_of_week
+    from clean_weekly_sales;
+
+| day_of_week |
+| ----------- |
+| Monday      |
+
+---
+**Query #2**
+# Q2: What range of week numbers are missing from the dataset?
+
+    WITH recursive cte AS (
+      SELECT 1 AS num
+      UNION ALL
+      SELECT num+1 FROM cte
+      WHERE num+1 <= 52)
+    select group_concat(num) missing_week_of_yr 
+    from cte 
+    where num not in(select distinct week_number from clean_weekly_sales) ;
+
+| missing_week_of_yr                                                         |
+| -------------------------------------------------------------------------- |
+| 1,2,3,4,5,6,7,8,9,10,11,12,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52 |
+
+---
+**Query #3**
+# Q3: How many total transactions were there for each year in the dataset?
+
+    select calendar_year, sum(transactions) total_transactions_yr
+    from clean_weekly_sales 
+    group by calendar_year;
+
+| calendar_year | total_transactions_yr |
+| ------------- | --------------------- |
+| 2018          | 346406460             |
+| 2019          | 365639285             |
+| 2020          | 375813651             |
+
+---
+**Query #4**
+# Q4: What is the total sales for each region for each month?
+
+    select region, month_number, sum(sales) total_sales
+    from clean_weekly_sales
+    group by region, month_number
+    order by region, month_number;
+
+| region        | month_number | total_sales |
+| ------------- | ------------ | ----------- |
+| AFRICA        | 3            | 567767480   |
+| AFRICA        | 4            | 1911783504  |
+| AFRICA        | 5            | 1647244738  |
+| AFRICA        | 6            | 1767559760  |
+| AFRICA        | 7            | 1960219710  |
+| AFRICA        | 8            | 1809596890  |
+| AFRICA        | 9            | 276320987   |
+| ASIA          | 3            | 529770793   |
+| ASIA          | 4            | 1804628707  |
+| ASIA          | 5            | 1526285399  |
+| ASIA          | 6            | 1619482889  |
+| ASIA          | 7            | 1768844756  |
+| ASIA          | 8            | 1663320609  |
+| ASIA          | 9            | 252836807   |
+| CANADA        | 3            | 144634329   |
+| CANADA        | 4            | 484552594   |
+| CANADA        | 5            | 412378365   |
+| CANADA        | 6            | 443846698   |
+| CANADA        | 7            | 477134947   |
+| CANADA        | 8            | 447073019   |
+| CANADA        | 9            | 69067959    |
+| EUROPE        | 3            | 35337093    |
+| EUROPE        | 4            | 127334255   |
+| EUROPE        | 5            | 109338389   |
+| EUROPE        | 6            | 122813826   |
+| EUROPE        | 7            | 136757466   |
+| EUROPE        | 8            | 122102995   |
+| EUROPE        | 9            | 18877433    |
+| OCEANIA       | 3            | 783282888   |
+| OCEANIA       | 4            | 2599767620  |
+| OCEANIA       | 5            | 2215657304  |
+| OCEANIA       | 6            | 2371884744  |
+| OCEANIA       | 7            | 2563459400  |
+| OCEANIA       | 8            | 2432313652  |
+| OCEANIA       | 9            | 372465518   |
+| SOUTH AMERICA | 3            | 71023109    |
+| SOUTH AMERICA | 4            | 238451531   |
+| SOUTH AMERICA | 5            | 201391809   |
+| SOUTH AMERICA | 6            | 218247455   |
+| SOUTH AMERICA | 7            | 235582776   |
+| SOUTH AMERICA | 8            | 221166052   |
+| SOUTH AMERICA | 9            | 34175583    |
+| USA           | 3            | 225353043   |
+| USA           | 4            | 759786323   |
+| USA           | 5            | 655967121   |
+| USA           | 6            | 703878990   |
+| USA           | 7            | 760331754   |
+| USA           | 8            | 712002790   |
+| USA           | 9            | 110532368   |
+
+---
+**Query #5**
+# Q5: What is the total count of transactions for each platform
+
+    select platform, sum(transactions)total_transactions
+    from clean_weekly_sales 
+    group by platform ;
+
+| platform | total_transactions |
+| -------- | ------------------ |
+| Retail   | 1081934227         |
+| Shopify  | 5925169            |
+
+---
+**Query #6**
+# Q6: What is the percentage of sales for Retail vs Shopify for each month?
+
+    with cte as (
+      select calendar_year, month_number month, platform, sum(sales) sales
+      from clean_weekly_sales
+      group by calendar_year, month, platform)
+    
+    select calendar_year, month,
+    round(100*max(case when platform = 'Retail' then sales else null end)/sum(sales),2) retail_percentage,
+    round(100*max(case when platform = 'Shopify' then sales else null end)/sum(sales),2) shopify_percentage
+    from cte 
+    group by calendar_year, month
+    order by calendar_year, month ;
+
+| calendar_year | month | retail_percentage | shopify_percentage |
+| ------------- | ----- | ----------------- | ------------------ |
+| 2018          | 3     | 97.92             | 2.08               |
+| 2018          | 4     | 97.93             | 2.07               |
+| 2018          | 5     | 97.73             | 2.27               |
+| 2018          | 6     | 97.76             | 2.24               |
+| 2018          | 7     | 97.75             | 2.25               |
+| 2018          | 8     | 97.71             | 2.29               |
+| 2018          | 9     | 97.68             | 2.32               |
+| 2019          | 3     | 97.71             | 2.29               |
+| 2019          | 4     | 97.80             | 2.20               |
+| 2019          | 5     | 97.52             | 2.48               |
+| 2019          | 6     | 97.42             | 2.58               |
+| 2019          | 7     | 97.35             | 2.65               |
+| 2019          | 8     | 97.21             | 2.79               |
+| 2019          | 9     | 97.09             | 2.91               |
+| 2020          | 3     | 97.30             | 2.70               |
+| 2020          | 4     | 96.96             | 3.04               |
+| 2020          | 5     | 96.71             | 3.29               |
+| 2020          | 6     | 96.80             | 3.20               |
+| 2020          | 7     | 96.67             | 3.33               |
+| 2020          | 8     | 96.51             | 3.49               |
+
+---
+**Query #7**
+# Q7: What is the percentage of sales by demographic for each year in the dataset?
+
+    with cte as (
+      select calendar_year, demographic, sum(sales) sales 
+      from clean_weekly_sales
+      group by calendar_year, demographic)
+    
+    select calendar_year, 
+    round(100*max(case when demographic = 'Families' then sales else null end) /sum(sales),2) percentage_families,
+    round(100*max(case when demographic = 'Couples' then sales else null end) /sum(sales),2) percentage_couples,
+    round(100*max(case when demographic = 'unknown' then sales else null end) /sum(sales),2) percentage_unknown
+    from cte 
+    group by calendar_year;
+
+| calendar_year | percentage_families | percentage_couples | percentage_unknown |
+| ------------- | ------------------- | ------------------ | ------------------ |
+| 2018          | 31.99               | 26.38              | 41.63              |
+| 2019          | 32.47               | 27.28              | 40.25              |
+| 2020          | 32.73               | 28.72              | 38.55              |
+
+---
+**Query #8**
+# Q8: Which age_band and demographic values contribute the most to Retail sales?
+
+    select age_band, demographic, round(100*sum(sales)/(select sum(sales) from clean_weekly_sales where platform = 'Retail'),2) percentage 
+    from clean_weekly_sales 
+    where platform = 'Retail'
+    group by age_band, demographic
+    order by percentage desc;
+
+| age_band     | demographic | percentage |
+| ------------ | ----------- | ---------- |
+| unknown      | unknown     | 40.52      |
+| Retirees     | Families    | 16.73      |
+| Retirees     | Couples     | 16.07      |
+| Middle Aged  | Families    | 10.98      |
+| Young Adults | Couples     | 6.56       |
+| Middle Aged  | Couples     | 4.68       |
+| Young Adults | Families    | 4.47       |
+
+---
+**Query #9**
+# Q9: Can we use the avg_transaction column to find the average transaction size for each year for Retail vs Shopify? If not - how would you calculate it instead?
+
+    select calendar_year, platform,
+    round(avg(avg_transaction)) avg_avg_of_trans,
+    round(sum(sales) / sum(transactions)) avg_sum_sales_trans
+    from clean_weekly_sales 
+    group by calendar_year, platform;
+
+| calendar_year | platform | avg_avg_of_trans | avg_sum_sales_trans |
+| ------------- | -------- | ---------------- | ------------------- |
+| 2018          | Retail   | 43               | 37                  |
+| 2018          | Shopify  | 188              | 192                 |
+| 2019          | Retail   | 42               | 37                  |
+| 2019          | Shopify  | 178              | 183                 |
+| 2020          | Shopify  | 175              | 179                 |
+| 2020          | Retail   | 41               | 37                  |
+
+---

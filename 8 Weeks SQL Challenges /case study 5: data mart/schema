@@ -13,5 +13,5 @@ CREATE TABLE weekly_sales (
   sales INTEGER
 );
 
-INSERT INTO data_mart.weekly_sales
+INSERT INTO weekly_sales
   (week_date, region, platform, segment, customer_type, transactions, sales)

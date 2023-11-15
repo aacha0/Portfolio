@@ -1,0 +1,17 @@
+CREATE SCHEMA data_mart;
+;
+
+
+DROP TABLE IF EXISTS weekly_sales;
+CREATE TABLE weekly_sales (
+  week_date VARCHAR(7),
+  region VARCHAR(13),
+  platform VARCHAR(7),
+  segment VARCHAR(4),
+  customer_type VARCHAR(8),
+  transactions INTEGER,
+  sales INTEGER
+);
+
+INSERT INTO data_mart.weekly_sales
+  (week_date, region, platform, segment, customer_type, transactions, sales)

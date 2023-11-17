@@ -1,1 +1,53 @@
+DROP TABLE IF EXISTS before_after;
+Create table before_after(
+select *, 
+case when week_date < '2020-06-15' then 'before' else 'after' end as new_packaging 
+from clean_weekly_sales);
 
+# What is the total sales for the 4 weeks before and after 2020-06-15? What is the growth or reduction rate in actual values and percentage of sales?
+with cte as( 
+  select week_date, sum(transactions) transactions, sum(sales) sales, dense_rank()over(order by week_date desc) ranking, 'before' as new_packaging
+  from before_after
+  where new_packaging = 'before'
+  group by week_date
+  union 
+   select week_date, sum(transactions) transactions, sum(sales) sales, dense_rank()over(order by week_date) ranking,'after' as new_packaging
+  from before_after
+  where new_packaging = 'after'
+  group by week_date),
+  cte1 as (
+    select sum(sales) sales, new_packaging 
+  from cte 
+  where ranking between 1 and 4
+  group by new_packaging)
+  
+select 
+max(case when new_packaging = 'after' then sales else null end) - max(case when new_packaging = 'before' then sales else null end) as difference, 
+round(100*((max(case when new_packaging = 'after' then sales else null end) - max(case when new_packaging = 'before' then sales else null end))/max(case when new_packaging = 'before' then sales else null end)),2) percentage_diff
+from cte1 ;
+
+
+# What about the entire 12 weeks before and after?
+with cte as( 
+  select week_date, sum(transactions) transactions, sum(sales) sales, dense_rank()over(order by week_date desc) ranking, 'before' as new_packaging
+  from before_after
+  where new_packaging = 'before'
+  group by week_date
+  union 
+   select week_date, sum(transactions) transactions, sum(sales) sales, dense_rank()over(order by week_date) ranking,'after' as new_packaging
+  from before_after
+  where new_packaging = 'after'
+  group by week_date),
+  cte1 as (
+    select sum(sales) sales, new_packaging 
+  from cte 
+  where ranking between 1 and 12
+  group by new_packaging)
+  
+select 
+max(case when new_packaging = 'after' then sales else null end) - max(case when new_packaging = 'before' then sales else null end) as difference, 
+round(100*((max(case when new_packaging = 'after' then sales else null end) - max(case when new_packaging = 'before' then sales else null end))/max(case when new_packaging = 'before' then sales else null end)),2) percentage_diff
+from cte1 ;
+
+
+# How do the sale metrics for these 2 periods before and after compare with the previous years in 2018 and 2019?

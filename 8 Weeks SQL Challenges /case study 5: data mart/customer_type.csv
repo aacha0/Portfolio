@@ -1,3 +1,11 @@
+ #customer type differences
+select  distinct a.customer_type, b.customer_type_sum-a.customer_type_sum as difference, round((b.customer_type_sum-a.customer_type_sum)/b.customer_type_sum*100,2) percentage_difference
+ from comparison a 
+ join comparison b 
+ on a.customer_type = b.customer_type
+ and a.new_packaging = 'before' and b.new_packaging = 'after'
+ order by difference ;
+
 customer_type,difference,percentage_difference
 Existing,-2904880331,-80.55
 Guest,-2602683474,-104.26

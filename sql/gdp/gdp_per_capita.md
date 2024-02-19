@@ -1,7 +1,6 @@
-# Q1. Data Integrity Checking & Cleanup
-## 1a: Alphabetically list all of the country codes in the continent_map table that appear more than once.
-## Display any values where country_code is null as country_code = "FOO" and make this row appear first in the list, 
-## even though it should be alphabetically sorted to the middle. Provide the results of this query as your answer. 
+# Braintree Analytics Code Challenge
+##Q1. Data Integrity Checking & Cleanup
+### 1a: Alphabetically list all of the country codes in the continent_map table that appear more than once.\n Display any values where country_code is null as country_code = "FOO" and make this row appear first in the list, \n even though it should be alphabetically sorted to the middle. Provide the results of this query as your answer. 
 
 ````sql
 USE paypal;

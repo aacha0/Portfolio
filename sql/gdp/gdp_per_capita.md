@@ -115,7 +115,7 @@ where year = 2007 and country_name like binary '%an%';
 ### Output
 ![Screenshot 2024-02-19 at 4 47 13 PM](https://github.com/aacha0/Portfolio/assets/148589444/495e242f-a9a6-4cf6-ba2e-8ffaac446896)
  
-### -- Q5. Find the sum of gpd_per_capita by year and the count of countries for each year that have non-null gdp_per_capita where (i) the year is before 2012 and (ii) the country has a null gdp_per_capita in 2012. Your result should have the columns: year, country_count, total
+### Q5. Find the sum of gpd_per_capita by year and the count of countries for each year that have non-null gdp_per_capita where (i) the year is before 2012 and (ii) the country has a null gdp_per_capita in 2012. Your result should have the columns: year, country_count, total
 
 ````sql
 with cte as(
@@ -160,13 +160,51 @@ where running_total >= 70000 and rn = 1
 
 ### Q7. Find the country with the highest average gdp_per_capita for each continent for all years. Now compare your list to the following data set. Please describe any and all mistakes that you can find with the data set below. Include any code that you use to help detect these mistakes.
 
-rank	continent_name	country_code	country_name	avg_gdp_per_capita
-1	Africa	SYC	Seychelles	$11,348.66
-1	Asia	KWT	Kuwait	$43,192.49
-1	Europe	MCO	Monaco	$152,936.10
-1	North America	BMU	Bermuda	$83,788.48
-1	Oceania	AUS	Australia	$47,070.39
-1	South America	CHL	Chile	$10,781.71
+![Screenshot 2024-02-19 at 5 08 23 PM](https://github.com/aacha0/Portfolio/assets/148589444/3a19b2cb-512b-4534-a087-1b7b677e1b20)
+
+````sql
+
+
+create temporary table temp_highest_gdp(
+ranking int,
+continent_name varchar(50),
+country_code varchar(50),
+country_name varchar(50),
+avg_gdp_per_capita decimal(10,2));
+insert into temp_highest_gdp( ranking, continent_name, country_code, country_name, avg_gdp_per_capita)
+values (1, 'Africa','SYC','Seychelles',	11348.66) , ( 1,	'Asia',	'KWT',	'Kuwait',	43192.49),
+(1,'Europe','MCO','Monaco',152936.10),(1,'North America','BMU','Bermuda',	83788.48), (1,'Oceania','AUS','Australia',47070.39),(1,'South America','CHL','Chile',10781.71);
+-- create a temporary table to insert the table that was given 
+
+with cte as(
+select dense_rank()over(partition by continent_name order by avg(gdp_per_capita) desc) as rn, 
+continent_name, country_code, country_name, round(avg(gdp_per_capita),2) avg_gdp_per_capita
+from gdp_join
+group by 2,3,4),
+cte1 as (
+select * from cte
+where rn = 1
+order by continent_name 
+)
+-- use one cte to rank countries base on avgerage gdp_per_capita by continent
+-- use second cte to filter the highest average gdp per capita by continent
+
+select t.country_code, case when t.country_code<>c.country_code then 'wrong_code' else null end
+from temp_highest_gdp t
+join cte1 c
+on t.continent_name = c.continent_name 
+where t.avg_gdp_per_capita <> c.avg_gdp_per_capita or 
+t.country_code<> c.country_code 
+-- join the temporary table with the CTE to compare numbers 
+-- returns data that either do not have matched average gdp per capita or wrong country code/country name 
+-- can use left join instead if wanting to check which record does not have any mistake
+
+````
+### Output
+#### correct results
+![Screenshot 2024-02-19 at 5 24 50 PM](https://github.com/aacha0/Portfolio/assets/148589444/7aba1808-7a68-4d34-b6a1-1628d54bf6c7)
+#### comparison 
+![Screenshot 2024-02-19 at 5 23 21 PM](https://github.com/aacha0/Portfolio/assets/148589444/5e096fdf-2a9e-4f8c-832b-0725b53c05e2)
 
 
 

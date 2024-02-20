@@ -1,5 +1,5 @@
 # Braintree Analytics Code Challenge
-##Q1. Data Integrity Checking & Cleanup
+## Q1. Data Integrity Checking & Cleanup
 ### 1a: Alphabetically list all of the country codes in the continent_map table that appear more than once. Display any values where country_code is null as country_code = "FOO" and make this row appear first in the list, even though it should be alphabetically sorted to the middle. Provide the results of this query as your answer. 
 
 ````sql
@@ -70,5 +70,105 @@ drop table temp;
    where r between 10 and 12;
    -- use where to filter rank between 10 and 12
 ````
-### Answers
+### Output
 ![Screenshot 2024-02-19 at 4 11 34 PM](https://github.com/aacha0/Portfolio/assets/148589444/7597ce71-7fca-482e-9712-d3ad3685fc63)
+
+### Q3. For the year 2012, create a 3 column, 1 row report showing the percent share of gdp_per_capita for the following regions: (i) Asia, (ii) Europe, (iii) the Rest of the World. Your result should look something like
+
+````sql
+select    
+   concat(round(100*sum(case when continent_name = 'Asia' then gdp_per_capita else 0 end)/(select sum(gdp_per_capita) from gdp_join where year = 2012),2),'%') as 'Asia', 
+   concat(round(100*sum(case when continent_name = 'Europe' then gdp_per_capita else 0 end)/(select sum(gdp_per_capita) from gdp_join where year = 2012),2),'%') as ' Europe', 
+	concat(round(100*sum(case when continent_name not in ('Asia','Europe') then gdp_per_capita else 0 end)/(select sum(gdp_per_capita) from gdp_join where year = 2012),2),'%') as 'Rest of World'
+-- use case when filtering data from Asia, Europe, and the rest of the world 
+-- use concat to add a percentage sign after the number
+-- use round to round up to two decimal places
+-- use a subquery to calculate the sum of the 2012 world gdp 
+   from gdp_join
+   where year = 2012;
+    
+````
+### Output
+![Screenshot 2024-02-19 at 4 26 50 PM](https://github.com/aacha0/Portfolio/assets/148589444/e9353aae-21c0-4cd6-809d-dcecc1f51ceb)
+
+### Q4a. What is the count of countries and sum of their related gdp_per_capita values for the year 2007 where the string 'an' (case insensitive) appears anywhere in the country name?
+
+````sql
+select  count(country_code) as cnt,concat('$',round(sum(gdp_per_capita),2)) total_gdp_per_capita
+-- use concat to add a dollar sign in front of the sum of gdp per capita
+-- use count to count the number of countries with 'an' in the name
+from gdp_join
+where year = 2007 and country_name regexp 'an';
+-- use WHERE and REGEXP to filter data 
+````
+![Screenshot 2024-02-19 at 4 33 07 PM](https://github.com/aacha0/Portfolio/assets/148589444/06e4c219-d239-4f90-ade8-ef93a09aacc6)
+
+### Q4b. Repeat question 4a, but this time make the query case sensitive.
+
+````sql
+select  count(country_code) as cnt,concat('$',round(sum(gdp_per_capita),2)) total_gdp_per_capita
+from gdp_join
+where year = 2007 and country_name like binary '%an%';
+-- add BINARY after LIKE to make the filter case-sensitive
+
+````
+### Output
+![Screenshot 2024-02-19 at 4 47 13 PM](https://github.com/aacha0/Portfolio/assets/148589444/495e242f-a9a6-4cf6-ba2e-8ffaac446896)
+ 
+### -- Q5. Find the sum of gpd_per_capita by year and the count of countries for each year that have non-null gdp_per_capita where (i) the year is before 2012 and (ii) the country has a null gdp_per_capita in 2012. Your result should have the columns: year, country_count, total
+
+````sql
+with cte as(
+select *
+from gdp_join 
+where (country_code) not in (select country_code from gdp_join where year= 2012)  
+and (country_code) in (select country_code from gdp_join where year < 2012) )
+-- use cte and subqueries to filter countries that have non-null data before 2012 and don't have 2012 records at the same time
+
+select year, count(distinct country_code) ,  concat('$',round(sum(gdp_per_capita),2))
+from cte 
+group by 1;
+-- use group by, count, and sum to aggregate data by year
+````
+### Output 
+![Screenshot 2024-02-19 at 4 53 17 PM](https://github.com/aacha0/Portfolio/assets/148589444/3a8a5c44-2063-4a31-9007-ced5305f3a6a)
+
+### Q6. All in a single query, execute all of the steps below and provide the results as your final answer:
+#### a. create a single list of all per_capita records for year 2009 that includes columns:continent_name, country_code, gdp_per_capita
+#### b. order this list by: continent_name ascending, characters 2 through 4 (inclusive) of the country_name descending
+#### c. create a running total of gdp_per_capita by continent_name
+#### d. return only the first record from the ordered list for which each continent's running total of gdp_per_capita meets or exceeds $70,000.00 with the following columns: continent_name, country_code, country_name , gdp_per_capita, running_total
+
+````sql
+with cte as(
+ select continent_name, country_code, concat('$',round(gdp_per_capita,2)) as gdp_per_capita, sum(gdp_per_capita)over(partition by continent_name) as running_total,
+ row_number()over(partition by continent_name order by continent_name asc, substring(country_name,2,4) desc) rn
+ from gdp_join
+ where year = 2009
+ order by continent_name asc, substring(country_name,2,4) desc
+ )
+ -- create a cte to filter data from 2009, rank country based on continent_name and country_code's characters 2 through 4 (inclusive) of the country_name descending in each continent, and calculate running total by continent
+    
+select continent_name, t.country_code, country_name, gdp_per_capita, concat('$',round(running_total,2)) as runnign_total 
+from cte t
+join countries c on t.country_code = c.country_code
+where running_total >= 70000 and rn = 1
+-- use WHERE to filter data that have running_total  by continent greater or equal to 70000.00 and is the first record from each continent ;
+````
+### Output
+![Screenshot 2024-02-19 at 4 57 48 PM](https://github.com/aacha0/Portfolio/assets/148589444/4fc77303-dc9b-4e8a-83e5-7e23ed1c7969)
+
+### Q7. Find the country with the highest average gdp_per_capita for each continent for all years. Now compare your list to the following data set. Please describe any and all mistakes that you can find with the data set below. Include any code that you use to help detect these mistakes.
+
+|rank|continent_name|country_code|country_name|avg_gdp_per_capita|
+ ---- -------------- ------------ ------------ -------------------
+|  1 | Africa	     |SYC	|Seychelles|	$11,348.66        |
+-- 1	Asia	KWT	Kuwait	$43,192.49
+-- 1	Europe	MCO	Monaco	$152,936.10
+-- 1	North America	BMU	Bermuda	$83,788.48
+-- 1	Oceania	AUS	Australia	$47,070.39
+-- 1	South America	CHL	Chile	$10,781.71
+
+
+
+

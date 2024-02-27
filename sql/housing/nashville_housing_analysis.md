@@ -1,5 +1,5 @@
 # Nashville Housing 
-##### Data Source: <https://github.com/AlexTheAnalyst/PortfolioProjects/blob/main/Nashville%20Housing%20Data%20for%20Data%20Cleaning.xlsx>
+##### Objective of this project: clean and format data 
 ## Step 1: Format Date
 ````sql
 -- standarize date formate
@@ -70,8 +70,42 @@ case
     else soldasvacant 
 END;
 ````
+## Step 5: Delete duplicates
+````sql
+with RowNumCTE as(
+Select *,
+	ROW_NUMBER() OVER (
+	PARTITION BY ParcelID,
+	PropertyAddress,
+	SalePrice,
+	SaleDate,
+	LegalReference
+	ORDER BY UniqueID) row_num
+
+From housing 
+)
+
+DELETE
+FROM housing p1
+WHERE EXISTS (SELECT 1 FROM housing p2
+      WHERE p2.ParcelID = p1.ParcelID AND
+       p2.PropertyAddress = p1.PropertyAddress AND
+       p2.SalePrice = p1.SalePrice AND
+       p2.SaleDate = p1.SaleDate AND
+       p2.LegalReference = p1.LegalReference AND
+       p2.UniqueID < p1.UniqueID);
+                  
 
 
+````
+## Step 6: Delete unused columns 
+````sql
+
+alter table housing
+drop column taxdistrict, 
+drop column propertyaddress
+
+````
 
 
 

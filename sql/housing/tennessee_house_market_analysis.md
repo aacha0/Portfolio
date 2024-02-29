@@ -8,7 +8,7 @@ set saledate = str_to_date(saledate,"%M %d,%Y");
 
 ````
 
-## Step 2: Update Null Values
+## Step 2: Update null values
 ````sql
 -- replace empty cells in propertyaddress column to 'null'
 update housing

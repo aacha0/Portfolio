@@ -1,4 +1,4 @@
-# Nashville Housing 
+# Tennessee House Market 
 ##### Objective of this project: clean and format data 
 ## Step 1: Format Date
 ````sql

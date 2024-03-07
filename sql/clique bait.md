@@ -111,17 +111,17 @@ order by r
 
 select p.product_category, 
 	count(case when i.event_name = 'Page View' then e.visit_id else null end) num_view_page, 
-	count(distinct case when i.event_name = 'Page View' then e.visit_id else null end) num_unique_visit_id_view_page, 
-    count(case when i.event_name = 'Add to Cart' then e.visit_id else null end) num_add_to_cart,
-    count(distinct case when i.event_name = 'Add to Cart' then e.visit_id else null end) num_unique_visit_id_add_to_cart
+    count(case when i.event_name = 'Add to Cart' then e.visit_id else null end) num_add_to_cart
 from events e
 join page_hierarchy p on e.page_id = p.page_id
 join event_identifier i on e.event_type = i.event_type
+where p.product_category is not null 
 group by 1 
-order by 1 desc
+order by 1 desc;
 
 ````
-<img width="786" alt="Screenshot 2024-03-06 at 10 29 18 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/2fb06fd2-286a-4637-a1ed-635672e0bc50">
+#### Output: 
+<img width="347" alt="Screenshot 2024-03-06 at 11 40 12 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/80423a08-695c-4eaf-90b4-e1b7201832cd">
 
 ### Q: What are the top 3 products by purchases?
 

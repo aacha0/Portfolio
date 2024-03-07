@@ -1,4 +1,4 @@
-# Clique Bait
+# Clique Bait SQL Case Study
 ## Introduction: 
 #### Clique Bait is an online seafood store
 ## Available Data: 

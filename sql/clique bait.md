@@ -46,7 +46,6 @@ from cte
 #### Output:
 <img width="117" alt="Screenshot 2024-03-06 at 9 27 10 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/ece172bd-5406-4422-90fd-56d23be26a79">
 
-#### On average, each user has 3.56 cookies
 
 ### Q: What is the unique number of visits by all users per month?
 ````sql

@@ -289,7 +289,8 @@ where num_ad_impression >0
 
 ### What is the uplift in purchase rate when comparing users who click on a campaign impression versus users who do not receive an impression? What if we compare them with users who just an impression but do not click?
 
-<img width="207" alt="Screenshot 2024-03-07 at 9 43 19 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/809c961a-4fe3-4bb1-b38b-ff665ac24727">
+<img width="204" alt="Screenshot 2024-03-07 at 10 12 03 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/20b3253d-3d61-43f7-92c0-656afbcf35fa">
+
 
 	Visits where users received an ad impression and clicked on the ad have the highest purchase rate compared to visits without ad impressions and visits where users received an ad impression but did not click.
 
@@ -312,7 +313,8 @@ group by 1,2
 
 ```
 
+<img width="578" alt="Screenshot 2024-03-07 at 10 08 42 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/0ecac2ce-7115-4dd7-a37a-ba7b6265f681">
 
-
+	Using the 'No Campaign' as a benchmark to compare the number of visits, the number of purchases, purchase rate, and average number of viewed pages, the campaign 'Half Off - Treat Your Shellf(ish)' has the highest number of visits and purchases, making it appear to be the most popular campaign
 
  

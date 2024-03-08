@@ -159,53 +159,70 @@ limit 3
 <img width="155" alt="Screenshot 2024-03-06 at 11 15 16 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/babec2aa-74b7-40e8-b887-1c58ebb8a44b">
 
 ## 3. Product Funnel Analysis
-### Q: Create a table to answer following questions:
+### Q: Create a table to answer the following questions:
 	### How many times was each product viewed?
 	### How many times was each product added to cart?
 	### How many times was each product added to a cart but not purchased (abandoned)?
 	### How many times was each product purchased?
+ 	### Which product had the most views, cart adds and purchases?
+	### Which product was most likely to be abandoned?
+	### Which product had the highest view to purchase percentage?
+	### What is the average conversion rate from view to cart add?
+	### What is the average conversion rate from cart add to purchase?
 ````sql
-create view product_table as (
-select visit_id, e.page_id, p.page_name, e.event_type , i.event_name
-from events e
-join event_identifier i on e.event_type= i.event_type
-join page_hierarchy p on p.page_id = e.page_id
-);
-
 select page_name as product_name, 
 count(case when event_name = 'Page view' then visit_id else null end) num_views,
 count(case when event_name = 'Add to Cart' then visit_id else null end) num_add_to_cart, 
 count(case when event_name = 'Add to Cart' and visit_id not in (select visit_id from events where event_type = 3) then visit_id else null end) num_incomplete_purchase, 
-count(distinct case when event_name = 'Add to Cart' and visit_id in (select visit_id from events where event_type = 3) then visit_id else null end) num_purchase
+count(distinct case when event_name = 'Add to Cart' and visit_id in (select visit_id from events where event_type = 3) then visit_id else null end) num_purchase,
+round(count(case when event_name = 'Add to Cart' then visit_id else null end)/count(case when event_name = 'Page view' then visit_id else null end)*100,2) conversion_rate_view_to_add_to_cart, 
+ round(count(case when event_name = 'Add to Cart' and visit_id in (select visit_id from events where event_type = 3) then visit_id else null end) /count(case when event_name = 'Add to Cart' then visit_id else null end)*100,2) conversion_rate_add_to_cart_purchase
 from product_table
-where page_name not in ('Home Page', 'All Products','Checkout','Confirmation') 
+where product_category is not null
 group by 1
-order by 5 desc 
+order by conversion_rate_add_to_cart_purchase desc
 ````
 
 #### Output: 
 <img width="530" alt="Screenshot 2024-03-07 at 3 09 50 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/84ba3398-29bb-49a5-a846-4048643c8c60">
 
-### Q: Create another table based on the product category and answer the following questions:
-	### Which product had the most views, cart adds and purchases?
-	### Which product was most likely to be abandoned?
-	### Which product had the highest view to purchase percentage?
-	### What is the average conversion rate from view to cart add?
-	### What is the average conversion rate from cart add to purchase?
- 
- ````sql
-select product_category, 
+ 	1. Oyster is the most viewed product
+  	2. Lobster is the most cart adds and purchase
+   	3. Russian Caviar is the most likely to be abandoned 
+    	4. Black Truffle had the highest view to purchase percentage 
+
+````sql
+select page_name as product_name, 
 count(case when event_name = 'Page view' then visit_id else null end) num_views,
 count(case when event_name = 'Add to Cart' then visit_id else null end) num_add_to_cart, 
 count(case when event_name = 'Add to Cart' and visit_id not in (select visit_id from events where event_type = 3) then visit_id else null end) num_incomplete_purchase, 
-count(case when event_name = 'Add to Cart' and visit_id in (select visit_id from events where event_type = 3) then visit_id else null end) num_purchase, 
- round(count(case when event_name = 'Add to Cart' then visit_id else null end)/count(case when event_name = 'Page view' then visit_id else null end)*100,2) conversion_rate_view_to_purchase, 
- round(count(case when event_name = 'Add to Cart' and visit_id in (select visit_id from events where event_type = 3) then visit_id else null end) /count(case when event_name = 'Add to Cart' then visit_id else null end)*100,2) conversion_rate_add_to_cart_and_purchase
+count(distinct case when event_name = 'Add to Cart' and visit_id in (select visit_id from events where event_type = 3) then visit_id else null end) num_purchase,
+round(count(case when event_name = 'Add to Cart' then visit_id else null end)/count(case when event_name = 'Page view' then visit_id else null end)*100,2) conversion_rate_view_to_add_to_cart, 
+ round(count(case when event_name = 'Add to Cart' and visit_id in (select visit_id from events where event_type = 3) then visit_id else null end) /count(case when event_name = 'Add to Cart' then visit_id else null end)*100,2) conversion_rate_add_to_cart_purchase
 from product_table
 where product_category is not null
-group by 1 
-order by num_purchase desc
+group by 1
+order by 6 desc ;
+with cte as (
+select page_name as product_name, 
+count(case when event_name = 'Page view' then visit_id else null end) num_views,
+count(case when event_name = 'Add to Cart' then visit_id else null end) num_add_to_cart, 
+count(case when event_name = 'Add to Cart' and visit_id not in (select visit_id from events where event_type = 3) then visit_id else null end) num_incomplete_purchase, 
+count(distinct case when event_name = 'Add to Cart' and visit_id in (select visit_id from events where event_type = 3) then visit_id else null end) num_purchase,
+round(count(case when event_name = 'Add to Cart' then visit_id else null end)/count(case when event_name = 'Page view' then visit_id else null end)*100,2) conversion_rate_view_to_add_to_cart, 
+ round(count(case when event_name = 'Add to Cart' and visit_id in (select visit_id from events where event_type = 3) then visit_id else null end) /count(case when event_name = 'Add to Cart' then visit_id else null end)*100,2) conversion_rate_add_to_cart_purchase
+from product_table
+where product_category is not null
+group by 1
+order by 6 desc)
+
+select round(avg(conversion_rate_view_to_add_to_cart),2) avg_rate_view_add_to_cart, round(avg(conversion_rate_add_to_cart_purchase),2) avg_rate_add_to_purchase 
+from cte;
 ````
+
+<img width="425" alt="Screenshot 2024-03-07 at 10 30 20 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/c2011a77-702e-4f74-8356-d5e789e1df3e">
+
+
 
 #### Output: 
 

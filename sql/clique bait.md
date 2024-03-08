@@ -1,6 +1,7 @@
 # Clique Bait SQL Case Study
 ## Introduction: 
 #### Clique Bait is an online seafood store
+#### My task is to support Danny’s, Clique Bait's CEO,  vision and analyze his dataset, and come up with creative solutions to calculate funnel fallout rates for the Clique Bait online store.
 ## Available Data: 
 #### Users
 <img width="219" alt="Screenshot 2024-03-07 at 4 09 00 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/8874dc9c-dc0d-463d-8afc-62569acb788d">

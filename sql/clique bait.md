@@ -215,17 +215,19 @@ order by num_purchase desc
 
 ### Q: Generate a table consisting of the following columns: 
 
-	user_id
-	visit_id
-	visit_start_time: the earliest event_time for each visit
-	page_views: count of page views for each visit
-	cart_adds: count of product cart add events for each visit
-	purchase: 1/0 flag if a purchase event exists for each visit
+	user_id,
+	visit_id,
+	visit_start_time: the earliest event_time for each visit,
+	page_views: count of page views for each visit,
+	cart_adds: count of product cart add events for each visit,
+	purchase: flag if a purchase event exists for each visit
 	campaign_name: map the visit to a campaign if the visit_start_time falls between the start_date and end_date
 	impression: count of ad impressions for each visit
 	click: count of ad clicks for each visit
 	cart_products: a comma-separated text value with products added to the cart sorted by the order they were added to the cart 
+ 
 ```` sql
+drop table if exists users_orders; 
 create table users_orders  as (
 with cte as (
 select distinct e.visit_id, u.user_id, min(e.event_time) start_time, 
@@ -233,6 +235,7 @@ sum(case when i.event_name = 'Page View' then 1 else 0 end) num_view_pages,
 sum(case when i.event_name = 'Add to Cart' then 1 else 0 end) num_add_to_cart,
 sum(case when i.event_name = 'Ad Impression' then 1 else 0 end) num_ad_impression, 
 sum(case when i.event_name = 'Ad Click' then 1 else 0 end) num_ad_click,
+sum(case when i.event_name = 'Purchase' then 1 else 0 end) purchase, 
 group_concat(case when p.product_category is not null and i.event_name = 'Add to Cart' then p.page_name else null end order by e.sequence_number) as cart_products
 from events e 
 join users u on e.cookie_id = u.cookie_id
@@ -245,13 +248,17 @@ from cte c
 left join campaign_identifier i on c.start_time between i.start_date and i.end_date
 order by user_id, start_time)
 ;
-select * from users_orders order by user_id
+select user_id, visit_id, start_time, num_view_pages, num_add_to_cart, num_ad_impression, num_ad_click, case when purchase = 1 then 'Yes' else 'No' end purchase, cart_products, campaign_name
+from users_orders order by user_id;
+
 
 
 ````
-<img width="1032" alt="Screenshot 2024-03-07 at 5 32 26 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/4f965ab9-1659-4e33-abf0-89c033406939">
+#### Output: 
+<img width="1086" alt="Screenshot 2024-03-07 at 5 41 23 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/5e35f75a-1d99-4925-8984-a9eda0201376">
 
-
+#### Analysis 
+	- 
 
 
 

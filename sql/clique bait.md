@@ -257,9 +257,62 @@ from users_orders order by user_id;
 #### Output: 
 <img width="1086" alt="Screenshot 2024-03-07 at 5 41 23 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/5e35f75a-1d99-4925-8984-a9eda0201376">
 
-#### Analysis 
-	- 
+#### Campaign Analysis 
+#### How ad impression affect users' purchase behavior? 
+```` sql
+select 
+case when num_ad_impression >0 then 'Yes' else 'No' end as ad_impression, 
+count(distinct visit_id) total_num_visits,
+sum(purchase) num_purchase, 
+round(sum(purchase)/count(distinct visit_id)*100,2) purchasing_rate
+from users_orders
+group by 1; 
+````
+<img width="423" alt="Screenshot 2024-03-07 at 9 29 23 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/313a2864-3e35-47f6-b403-c2e43b0e7dab">
+
+	Visits with at least one ad impression have a higher rate of purchases compared to visits without ad impressions. 
+
+### Does clicking into the ad increase the purchase rate?
+````sql
+
+select 
+case when num_ad_click >0 then 'Yes' else 'No' end as ad_click, 
+count(distinct visit_id) total_num_visits,
+sum(purchase) num_purchase, 
+round(sum(purchase)/count(distinct visit_id)*100,2) purchasing_rate
+from users_orders
+where num_ad_impression >0
+````
+<img width="381" alt="Screenshot 2024-03-07 at 9 34 43 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/574fcbe4-ec30-4911-a2c4-e756f5976586">
+
+	After further analysis of visits with at least one ad impression, it was found that visits where users clicked on ads had a purchase rate approximately 24% higher than visits where users did not click on ads.
+
+### What is the uplift in purchase rate when comparing users who click on a campaign impression versus users who do not receive an impression? What if we compare them with users who just an impression but do not click?
+
+<img width="207" alt="Screenshot 2024-03-07 at 9 43 19 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/809c961a-4fe3-4bb1-b38b-ff665ac24727">
+
+	Visits where users received an ad impression and clicked on the ad have the highest purchase rate compared to visits without ad impressions and visits where users received an ad impression but did not click.
+
+ #### Quantify weather the campaign is a success by each campaign 
+```sql
+select 
+case when num_ad_click >0 and num_ad_impression>0  then 'Received and Click'
+when num_ad_impression >0 and num_ad_click = 0 then "Received But No Click"
+else "Did Not Receive Any" end as Ads, 
+round(sum(purchase)/count(distinct visit_id)*100,2) purchase_rate
+from users_orders 
+group by 1; 
+
+select case when campaign_name is null then "No Campaign" else campaign_name end as campaign_name, 
+case when num_ad_impression = 0 then 'No' else 'Yes' end as ad_impression,
+count(distinct visit_id) num_visit,
+round(sum(purchase)/count(distinct visit_id)*100,2) purchase_rate
+from users_orders
+group by 1,2
+
+```
 
 
 
 
+ 

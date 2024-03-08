@@ -2,7 +2,21 @@
 ## Introduction: 
 #### Clique Bait is an online seafood store
 ## Available Data: 
-#### Users, Events, Event Identifier, Campaign Identifier, and Page Hierarchy
+#### Users
+<img width="219" alt="Screenshot 2024-03-07 at 4 09 00 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/8874dc9c-dc0d-463d-8afc-62569acb788d">
+
+#### Events
+<img width="432" alt="Screenshot 2024-03-07 at 4 09 57 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/b9486e80-81d0-472b-8a81-816b3bbde06c">
+
+#### Event Identifier
+<img width="150" alt="Screenshot 2024-03-07 at 4 10 17 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/831bddc3-9e78-46a7-b262-b365ceeaffe5">
+
+#### Campaign Identifier
+<img width="534" alt="Screenshot 2024-03-07 at 4 10 38 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/ad8d465b-2927-47e9-bb96-bfad190edc63">
+
+#### Page Hierarchy
+<img width="323" alt="Screenshot 2024-03-07 at 4 11 04 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/6c740719-252d-41b0-b9c8-9106acb48b56">
+
 
 ## 1. Enterprise Relationship Diagram
 <img width="872" alt="Screenshot 2024-03-06 at 9 15 58 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/697124e3-f26e-4dc3-96ff-131a5a698fd5">

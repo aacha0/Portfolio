@@ -200,7 +200,7 @@ order by 6 desc)
  	1. Oyster is the most viewed product
   	2. Lobster is the most cart adds and purchase
    	3. Russian Caviar is the most likely to be abandoned 
-    	4. Black Truffle had the highest view to purchase percentage 
+    4. Black Truffle had the highest view to purchase percentage 
 
 ````sql
 -- use the previous code as cte

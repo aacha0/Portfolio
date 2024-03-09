@@ -128,18 +128,172 @@ group by 1
 
 ## 3. Product Analysis
 ### Q: What are the top 3 products by total revenue before discount?
+```sql
+with cte as(
+select d.product_name, sum(p.price*p.qty) rev, dense_rank()over(order by sum(p.price*p.qty) desc) r
+from sales p
+join product_details d on p.prod_id = d.product_id
+group by 1) 
+select product_name, rev as revenue_b4_discount
+from cte
+where r <= 3
+```
+#### Output: 
+
+<img width="295" alt="Screenshot 2024-03-08 at 11 57 48 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/5d31a102-799e-4fe8-b776-01d394305cae">
+
 ### Q: What is the total quantity, revenue and discount for each segment?
+```sql
+select d.segment_name, sum(s.qty) total_qty, sum(s.price*s.qty)revenue, round(sum(s.price*s.qty*s.discount/100),2) discount
+from sales s
+join product_details d on s.prod_id = d.product_id 
+group by 1 
+
+```
+#### Output: 
+
+<img width="247" alt="Screenshot 2024-03-09 at 12 02 54 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/bc037435-7484-47e0-bae5-b790232c29c8">
+
 ### Q: What is the top selling product for each segment?
+```sql
+with cte as(
+select d.segment_name, d.product_name, sum(qty) total_qty, dense_rank()over(partition by d.segment_name order by sum(qty) desc) r
+from sales s
+join product_details d on s.prod_id = d.product_id 
+group by 1,2
+)
+
+select segment_name, product_name, total_qty
+ from cte
+ where r = 1;
+```
+#### Output: 
+
+<img width="317" alt="Screenshot 2024-03-09 at 12 09 16 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/a08536f7-0cd9-4b90-8c44-2cea56c1b34a">
+
 ### Q: What is the total quantity, revenue and discount for each category?
+
+```sql
+select d.category_name, sum(s.qty) total_qty, sum(s.price*s.qty)revenue, round(sum(s.price*s.qty*s.discount/100),2) discount
+from sales s
+join product_details d on s.prod_id = d.product_id 
+group by 1 
+;
+```
+
+#### Output: 
+
+<img width="246" alt="Screenshot 2024-03-09 at 12 10 58 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/e6dba243-6cc8-4e76-913c-fef915c1f656">
+
 ### Q: What is the top selling product for each category?
+
+```sql
+with cte as(
+select d.category_name, d.product_name, sum(qty) total_qty, dense_rank()over(partition by d.category_name order by sum(qty) desc) r
+from sales s
+join product_details d on s.prod_id = d.product_id 
+group by 1,2
+)
+
+select category_name, product_name, total_qty
+ from cte
+ where r = 1;
+```
+#### Output: 
+
+<img width="306" alt="Screenshot 2024-03-09 at 12 12 56 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/f5cef81d-351d-4fd0-bd8c-fbe87209a782">
+
 ### Q: What is the percentage split of revenue by product for each segment?
+```sql
+ with cte as (
+select d.segment_name, d.product_name, sum(s.price*s.qty) rev
+from sales s
+join product_details d on s.prod_id = d.product_id 
+group by 1,2)
+select segment_name, product_name, round(rev/sum(rev)over(partition by segment_name)*100,2) rev_pct
+from cte
+order by 1,2
+```
+#### Output: 
+
+<img width="308" alt="Screenshot 2024-03-09 at 12 38 42 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/6dbd2f1e-cd1b-40f2-ae01-d8b800ea618b">
+
+
 ### Q: What is the percentage split of revenue by segment for each category?
+
+```sql
+with cte as(
+select d.category_name, d.segment_name, sum(s.price*s.qty) rev
+from sales s
+join product_details d on s.prod_id = d.product_id 
+group by 1,2)
+
+select category_name, segment_name, rev as revenue, round(rev/sum(rev)over(partition by category_name)*100,2) pct_segment_rev
+from cte 
+
+
+```
+#### Output: 
+
+<img width="321" alt="Screenshot 2024-03-09 at 12 29 27 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/6a820078-8320-41d5-b642-fbdf18a8c16f">
+
+
 ### Q: What is the percentage split of total revenue by category?
+```sql
+select d.category_name, round(sum(s.price*qty)/(select sum(price*qty) from sales)*100,2) rev_pct
+from sales s
+join product_details d on s.prod_id = d.product_id 
+group by 1
+order by 2 desc;
+```
+#### Output: 
+
+<img width="140" alt="Screenshot 2024-03-09 at 12 20 46 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/8bb812f3-213d-4b8e-8faf-eea61bc90b30">
+
 ### Q: What is the total transaction “penetration” for each product? (hint: penetration = number of transactions where at least 1 quantity of a product was purchased divided by total number of transactions)
+
+```sql
+select d.product_name, round(count(distinct txn_id)/(select count(distinct txn_id) from sales)*100,2)penetration_pct
+from sales s
+join product_details d on s.prod_id = d.product_id 
+group by 1
+order by 1
+```
+
+#### Output: 
+
+<img width="305" alt="Screenshot 2024-03-09 at 12 35 20 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/2093afdb-ff0f-4e9a-8c54-4fe64ad7e6b5">
+
 ### Q: What is the most common combination of at least 1 quantity of any 3 products in a 1 single transaction?
+```sql
+-- filter transactions that only have three items
+with cte as(
+select txn_id, prod_id, product_name
+from sales s
+join product_details d  on s.prod_id = d.product_id
+where txn_id in (select txn_id
+from sales
+group by 1
+having count(distinct prod_id) = 3)),
+-- concat the product list in each transaction
+cte1 as(
+select txn_id, group_concat(prod_id order by prod_id asc) prod_ids, group_concat(product_name order by product_name asc) product_names
+ from cte
+ group by 1),
+-- count the appearance of each combination of the ordered products
+ cte2 as(
+select prod_ids, product_names , count(*) cnt
+from cte1 
+group by 1,2
+order by cnt desc)
+select prod_ids, product_names, cnt 
+from cte2 
+where cnt in (select max(cnt) from cte2)
+```
 
+#### Output: 
 
-
+<img width="637" alt="Screenshot 2024-03-09 at 12 56 49 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/8aeaeaf2-68de-4ee1-a879-c126e002ab24">
 
 
 

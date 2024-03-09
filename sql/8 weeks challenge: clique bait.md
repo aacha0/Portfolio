@@ -272,7 +272,7 @@ group by 1;
 ````
 <img width="423" alt="Screenshot 2024-03-07 at 9 29 23 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/313a2864-3e35-47f6-b403-c2e43b0e7dab">
 
-	A: Visits with at least one ad impression have a higher rate of purchases compared to visits without ad impressions. 
+A: Visits with at least one ad impression have a higher rate of purchases compared to visits without ad impressions. 
 
 #### Q: Does clicking into the ad increase the purchase rate?
 ````sql
@@ -287,14 +287,14 @@ where num_ad_impression >0
 ````
 <img width="381" alt="Screenshot 2024-03-07 at 9 34 43 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/574fcbe4-ec30-4911-a2c4-e756f5976586">
 
-	A: After further analysis of visits with at least one ad impression, it was found that visits where users clicked on ads had a purchase rate approximately 24% higher than visits where users did not click on ads.
+A: After further analysis of visits with at least one ad impression, it was found that visits where users clicked on ads had a purchase rate approximately 24% higher than visits where users did not click on ads.
 
 #### Q: What is the uplift in purchase rate when comparing users who click on a campaign impression versus users who do not receive an impression? What if we compare them with users who just an impression but do not click?
 
 <img width="204" alt="Screenshot 2024-03-07 at 10 12 03 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/20b3253d-3d61-43f7-92c0-656afbcf35fa">
 
 
-	A: Visits where users received an ad impression and clicked on the ad have the highest purchase rate compared to visits without ad impressions and visits where users received an ad impression but did not click.
+A: Visits where users received an ad impression and clicked on the ad have the highest purchase rate compared to visits without ad impressions and visits where users received an ad impression but did not click.
 
  #### Q: Quantify whether the campaign is a success by each campaign 
 ```sql
@@ -317,6 +317,6 @@ group by 1,2
 
 <img width="578" alt="Screenshot 2024-03-07 at 10 08 42 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/0ecac2ce-7115-4dd7-a37a-ba7b6265f681">
 
-	A: Using the 'No Campaign' as a benchmark to compare the number of visits, the number of purchases, purchase rate, and average number of viewed pages, the campaign 'Half Off - Treat Your Shellf(ish)' has the highest number of visits and purchases, making it appear to be the most popular campaign
+A: Using the 'No Campaign' as a benchmark to compare the number of visits, the number of purchases, purchase rate, and average number of viewed pages, the campaign 'Half Off - Treat Your Shellf(ish)' has the highest number of visits and purchases, making it appear to be the most popular campaign
 
  

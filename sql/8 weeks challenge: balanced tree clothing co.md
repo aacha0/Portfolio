@@ -12,6 +12,7 @@ balanced_tree.product_details includes all information about the entire range th
 
 #### Product Sales
 balanced_tree.sales contains product level information for all the transactions made for Balanced Tree including quantity, price, percentage discount, member status, a transaction ID and also the transaction timestamp.
+
 <img width="390" alt="Screenshot 2024-03-08 at 6 34 38 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/02dbff6e-8e86-48a2-b806-90e73422a5ec">
 
 #### Product Hierarchy 
@@ -126,16 +127,16 @@ group by 1
 
 
 ## 3. Product Analysis
-#### Q: What are the top 3 products by total revenue before discount?
-#### Q: What is the total quantity, revenue and discount for each segment?
-#### Q: What is the top selling product for each segment?
-#### Q: What is the total quantity, revenue and discount for each category?
-#### Q: What is the top selling product for each category?
-#### Q: What is the percentage split of revenue by product for each segment?
-#### Q: What is the percentage split of revenue by segment for each category?
-#### Q: What is the percentage split of total revenue by category?
-#### Q: What is the total transaction “penetration” for each product? (hint: penetration = number of transactions where at least 1 quantity of a product was purchased divided by total number of transactions)
-#### Q: What is the most common combination of at least 1 quantity of any 3 products in a 1 single transaction?
+### Q: What are the top 3 products by total revenue before discount?
+### Q: What is the total quantity, revenue and discount for each segment?
+### Q: What is the top selling product for each segment?
+### Q: What is the total quantity, revenue and discount for each category?
+### Q: What is the top selling product for each category?
+### Q: What is the percentage split of revenue by product for each segment?
+### Q: What is the percentage split of revenue by segment for each category?
+### Q: What is the percentage split of total revenue by category?
+### Q: What is the total transaction “penetration” for each product? (hint: penetration = number of transactions where at least 1 quantity of a product was purchased divided by total number of transactions)
+### Q: What is the most common combination of at least 1 quantity of any 3 products in a 1 single transaction?
 
 
 

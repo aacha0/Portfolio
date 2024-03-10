@@ -103,7 +103,7 @@ where mt.month_year < m.created_at
 
 <img width="54" alt="Screenshot 2024-03-10 at 12 41 38 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/11ae2a85-2836-47eb-b0ed-eaf0de472c8c">
 
-#### Out of all records, there are 188 records where the month_year value precedes the created_at value. However, previously, we manually adjusted month_year to reflect the beginning of the month. Let's verify if these records align with the created_at month and year
+#### Out of all records, there are 188 records where the `month_year` value precedes the `created_at` value. However, previously, we manually adjusted `month_year` to reflect the beginning of the month. Let's verify if these records align with the `created_at` month and year
 
 ```sql
 select count(*)

@@ -111,6 +111,7 @@ from interest_map m
 join interest_metrics mt on m.id = mt.interest_id
 where date_format(created_at, '%Y-%m') >  month_year
 ```
+#### Output:
 <img width="54" alt="Screenshot 2024-03-10 at 12 45 32 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/55c63d50-cd1a-4cab-af26-d13ab5f822bd">
 
 #### Since it returned `0` records that have `month_year` earlier than the `created_at`, these records should be considered valid data

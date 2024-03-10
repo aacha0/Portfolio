@@ -67,6 +67,50 @@ where id not in (select interest_id from interest_metrics)
 
 ### Summarise the id values in the fresh_segments.interest_map by its total record count in this table
 
+```sql
+select id, interest_name ,count(mt.interest_id) cnt
+from interest_map m
+join interest_metrics mt on m.id = mt.interest_id
+group by 1,2
+order by 3 desc
+```
+#### Output: 
+<img width="229" alt="Screenshot 2024-03-10 at 12 25 33 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/28fc89e8-0cc7-48a0-ae19-cfb4592b0185">
+
 ### What sort of table join should we perform for our analysis and why? Check your logic by checking the rows where interest_id = 21246 in your joined output and include all columns from fresh_segments.interest_metrics and all columns from fresh_segments.interest_map except from the id column.
+
+```sql
+select *
+from interest_map m
+join interest_metrics mt on m.id = mt.interest_id
+where mt.interest_id = 21246
+
+```
+#### Output: 
+<img width="971" alt="Screenshot 2024-03-10 at 12 36 34 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/fc223293-7e8e-4a13-bc69-b1505bbf6ee9">
+
+#### We should use `INNER JOIN` to join tables to perform analysis
+
 ### Are there any records in your joined table where the month_year value is before the created_at value from the fresh_segments.interest_map table? Do you think these values are valid and why?
 
+```sql
+select count(*)
+from interest_map m
+join interest_metrics mt on m.id = mt.interest_id
+where mt.month_year < m.created_at
+```
+#### Output:
+
+<img width="54" alt="Screenshot 2024-03-10 at 12 41 38 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/11ae2a85-2836-47eb-b0ed-eaf0de472c8c">
+
+#### Out of all records, there are 188 records where the month_year value precedes the created_at value. However, previously, we manually adjusted month_year to reflect the beginning of the month. Let's verify if these records align with the created_at month and year
+
+```sql
+select count(*)
+from interest_map m
+join interest_metrics mt on m.id = mt.interest_id
+where date_format(created_at, '%Y-%m') >  month_year
+```
+<img width="54" alt="Screenshot 2024-03-10 at 12 45 32 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/55c63d50-cd1a-4cab-af26-d13ab5f822bd">
+
+#### Since it returned `0` records that have `month_year` earlier than the `created_at`, these records should be considered valid data

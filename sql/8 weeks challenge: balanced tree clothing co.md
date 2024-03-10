@@ -15,13 +15,6 @@ balanced_tree.sales contains product level information for all the transactions 
 
 <img width="390" alt="Screenshot 2024-03-08 at 6 34 38 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/02dbff6e-8e86-48a2-b806-90e73422a5ec">
 
-#### Product Hierarchy 
-
-<img width="254" alt="Screenshot 2024-03-08 at 6 35 28 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/1376f85c-2552-477b-be14-4a5bcd4bc3f8">
-
-#### Product Price
-
-<img width="177" alt="Screenshot 2024-03-08 at 6 35 49 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/3e8b42e8-0afb-4cb3-8b54-fcb10fc76a51">
 
 ## 1. High Level Sales Analysis 
 ### Q: What was the total quantity sold for all products?
@@ -296,12 +289,49 @@ where cnt in (select max(cnt) from cte2)
 <img width="637" alt="Screenshot 2024-03-09 at 12 56 49 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/8aeaeaf2-68de-4ee1-a879-c126e002ab24">
 
 
+## 4. Reporting Challenge
+
+### Task: Write a single SQL script that combines all of the previous questions into a scheduled report that the Balanced Tree team can run at the beginning of each month to calculate the previous month’s values.
+
+```sql
+drop temporary table if exists monthly_report;
+create temporary table monthly_report(
+with cte as(
+select date_format(s.start_txn_time,'%Y-%m') yr_mo, 
+d.category_name, 
+d.segment_name, 
+count(distinct txn_id) total_qty, 
+round(sum(s.price*qty*discount/100),2) total_discount,
+sum(s.price*qty) total_rev
+from sales s
+join product_details d on s.prod_id = d.product_id 
+group by 1,2,3)
+
+select *,
+round(total_rev/sum(total_rev)over(partition by yr_mo)*100,2) as sales_pct_by_month, 
+round(total_rev/sum(total_rev)over(partition by yr_mo,category_name)*100,2) as sales_pct_by_month_category
+from cte
+);
+-- sales report by segment
+select * 
+from monthly_report
+-- enter the desired year_month 
+where yr_mo = '2021-01';
+
+-- overall sales report
+select yr_mo, sum(total_qty), sum(total_rev), sum(total_discount)
+from monthly_report
+-- enter the desired year_month 
+
+where yr_mo = '2021-01'
+```
+#### Output: 
+
+<img width="735" alt="Screenshot 2024-03-09 at 9 39 30 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/8092f98f-c418-40be-9628-352a9e152c8a">
+
+This temporary table can easily calculate the total sales, total quantity sold, total discount, sales percentage by segment, and sales percentage of each segment by category for every month
 
 
-
-
-
-
-
+##
 
 

@@ -15,7 +15,7 @@
 <img width="665" alt="Screenshot 2024-03-09 at 10 57 07 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/bb83dd9d-7307-4881-b258-9fcc887bb8f9">
 
 ## 1. Data Exploration and Cleansing
-### Update the fresh_segments.interest_metrics table by modifying the month_year column to be a date data type with the start of the month
+### Q: Update the fresh_segments.interest_metrics table by modifying the month_year column to be a date data type with the start of the month
 
 ```sql
 alter table interest_metrics
@@ -29,7 +29,7 @@ set month_year = cast(concat(year,'-',month,'-01') as date);
 select * from interest_metrics
 ```
 
-### What is count of records in the fresh_segments.interest_metrics for each month_year value sorted in chronological order (earliest to latest) with the null values appearing first?
+### Q: What is count of records in the fresh_segments.interest_metrics for each month_year value sorted in chronological order (earliest to latest) with the null values appearing first?
 
 ```sql
 select month_year, count(*) cnt
@@ -40,15 +40,15 @@ order by 1
 #### Output: 
 <img width="117" alt="Screenshot 2024-03-09 at 11 38 17 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/51c49521-a762-4ad8-b001-85fef2056d02">
 
-### What do you think we should do with these null values in the fresh_segments.interest_metrics
+### Q: What do you think we should do with these null values in the fresh_segments.interest_metrics
 
 ```sql
 delete from interest_metrics
 where month_year is null;
 ```
-#### Since we want specific monthly data, we can delete the data that do not have a month_year record. 
+#### A: Since we want specific monthly data, we can delete the data that do not have a month_year record. 
 
-### How many interest_id values exist in the fresh_segments.interest_metrics table but not in the fresh_segments.interest_map table? ### What about the other way around?
+### Q: How many interest_id values exist in the fresh_segments.interest_metrics table but not in the fresh_segments.interest_map table? ### What about the other way around?
 
 ```sql
 
@@ -65,7 +65,7 @@ where id not in (select interest_id from interest_metrics)
 #### Output: 
 <img width="138" alt="Screenshot 2024-03-09 at 11 45 32 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/8ae74d7d-a576-4490-9d83-f7b7025e83f4">
 
-### Summarise the id values in the fresh_segments.interest_map by its total record count in this table
+### Q: Summarise the id values in the fresh_segments.interest_map by its total record count in this table
 
 ```sql
 select id, interest_name ,count(mt.interest_id) cnt
@@ -77,7 +77,7 @@ order by 3 desc
 #### Output: 
 <img width="229" alt="Screenshot 2024-03-10 at 12 25 33 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/28fc89e8-0cc7-48a0-ae19-cfb4592b0185">
 
-### What sort of table join should we perform for our analysis and why? Check your logic by checking the rows where interest_id = 21246 in your joined output and include all columns from fresh_segments.interest_metrics and all columns from fresh_segments.interest_map except from the id column.
+### Q: What sort of table join should we perform for our analysis and why? Check your logic by checking the rows where interest_id = 21246 in your joined output and include all columns from fresh_segments.interest_metrics and all columns from fresh_segments.interest_map except from the id column.
 
 ```sql
 select *
@@ -89,9 +89,9 @@ where mt.interest_id = 21246
 #### Output: 
 <img width="971" alt="Screenshot 2024-03-10 at 12 36 34 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/fc223293-7e8e-4a13-bc69-b1505bbf6ee9">
 
-#### We should use `INNER JOIN` to join tables to perform analysis
+#### A: We should use `INNER JOIN` to join tables to perform analysis
 
-### Are there any records in your joined table where the month_year value is before the created_at value from the fresh_segments.interest_map table? Do you think these values are valid and why?
+### Q: Are there any records in your joined table where the month_year value is before the created_at value from the fresh_segments.interest_map table? Do you think these values are valid and why?
 
 ```sql
 select count(*)
@@ -103,7 +103,7 @@ where mt.month_year < m.created_at
 
 <img width="54" alt="Screenshot 2024-03-10 at 12 41 38 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/11ae2a85-2836-47eb-b0ed-eaf0de472c8c">
 
-#### Out of all records, there are 188 records where the `month_year` value precedes the `created_at` value. However, previously, we manually adjusted `month_year` to reflect the beginning of the month. Let's verify if these records align with the `created_at` month and year
+#### A: Out of all records, there are 188 records where the `month_year` value precedes the `created_at` value. However, previously, we manually adjusted `month_year` to reflect the beginning of the month. Let's verify if these records align with the `created_at` month and year
 
 ```sql
 select count(*)
@@ -114,4 +114,4 @@ where date_format(created_at, '%Y-%m') >  month_year
 #### Output:
 <img width="54" alt="Screenshot 2024-03-10 at 12 45 32 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/55c63d50-cd1a-4cab-af26-d13ab5f822bd">
 
-#### Since it returned `0` records that have `month_year` earlier than the `created_at`, these records should be considered valid data
+#### A: Since it returned `0` records that have `month_year` earlier than the `created_at`, these records should be considered valid data

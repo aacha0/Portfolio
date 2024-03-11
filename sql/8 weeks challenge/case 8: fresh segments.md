@@ -267,7 +267,7 @@ limit 5;
 
 <img width="370" alt="Screenshot 2024-03-10 at 9 10 02 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/c91f97b8-ff03-44d3-9375-7ef50c8c6c46">
 
-### Which 5 interests had the largest standard deviation in their percentile_ranking value?
+### Q: Which 5 interests had the largest standard deviation in their percentile_ranking value?
 
 ```sql
 
@@ -316,5 +316,88 @@ join cte2 b on a.interest_id = b.interest_id and a.r = 1 and b.r=1
 
 ### Q: How would you describe our customers in this segment based off their composition and ranking values? What sort of products or services should we show to these customers and what should we avoid?
 
+## 4. Index Analysis
+### The index_value is a measure which can be used to reverse calculate the average composition for Fresh Segments’ clients.
+### Average composition can be calculated by dividing the composition column by the index_value column rounded to 2 decimal places.
+```sql
+alter table interest_metrics
+add avg_composition decimal(10,2);
+
+update interest_metrics
+set avg_composition = round(composition/index_value,2) ;
+select * from interest_metrics
+```
+### Q: What is the top 10 interests by the average composition 
+```sql
+with cte as (
+select month_year, interest_id, m.interest_name, avg_composition, dense_rank()over(partition by month_year order by avg_composition desc) r
+from interest_metrics i 
+join interest_map m on i.interest_id = m.id
+)
+select month_year, interest_id, interest_name , avg_composition
+from cte 
+where r <= 10
+```
+#### Output: 
+<img width="491" alt="Screenshot 2024-03-11 at 12 36 19 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/3fec2def-cfd3-480d-b51a-c5b286d7d48d">
+for each month?
+
+### Q: For all of these top 10 interests - which interest appears the most often?
+
+``` sql
+-- create a view table for top 10 interests for easier access to top 10 inteests list 
+create view top_10_avg as(
+with cte as (
+select month_year, interest_id, m.interest_name, avg_composition, dense_rank()over(partition by month_year order by avg_composition desc) r
+from interest_metrics i 
+join interest_map m on i.interest_id = m.id
+)
+select interest_id, interest_name, count(*) cnt, dense_rank()over(order by count(*) desc) ranks
+from top_10_avg
+group by 1,2
+order by 3 desc ; 
+
+```
+#### Output: 
+
+<img width="399" alt="Screenshot 2024-03-11 at 12 39 17 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/25188e6a-f294-4d24-a192-99f7cbca45ba">
+
+
+### Q: What is the average of the average composition for the top 10 interests for each month?
+```sql
+select month_year, round(avg(avg_composition),2) avg_of_avg_composition
+from top_10_avg
+group by 1
+```
+
+#### Output: 
+
+<img width="264" alt="Screenshot 2024-03-11 at 12 43 56 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/81d40af0-f800-4b9a-abcd-04b309133e35">
+
+
+### Q: What is the 3 month rolling average of the max average composition value from September 2018 to August 2019 and include the previous top ranking interests in the same output.
+```sql
+with cte as(
+select i.month_year, m.interest_name, avg_composition as max_index_composition
+from interest_metrics i 
+join interest_map m on i.interest_id = m.id
+where (i.month_year, avg_composition) in (select month_year, max(avg_composition) from interest_metrics group by 1)), 
+cte1 as (
+select month_year,
+ interest_name,
+ max_index_composition,
+ round(avg(max_index_composition)over(order by month_year rows between 2 preceding and current row),2) 3_mo_rolling_avg, 
+ concat(lag(interest_name)over(order by month_year),': ', lag(max_index_composition)over(order by month_year)) 1_mo_ago,
+  concat(lag(interest_name,2)over(order by month_year),': ', lag(max_index_composition,2)over(order by month_year)) 2_mo_ago
+from cte) 
+select * 
+from cte1 
+where month_year between '2018-09-01' and '2019-08-01'
+```
+#### Output: 
+
+<img width="944" alt="Screenshot 2024-03-11 at 1 04 24 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/eaf606c0-7001-4dc5-9c8e-d4a230bf7810">
+
+### Q: Provide a possible reason why the max average composition might change from month to month? Could it signal something is not quite right with the overall business model for Fresh Segments?
 
 

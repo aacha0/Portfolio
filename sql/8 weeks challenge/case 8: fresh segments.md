@@ -115,3 +115,206 @@ where date_format(created_at, '%Y-%m') >  month_year
 <img width="54" alt="Screenshot 2024-03-10 at 12 45 32 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/55c63d50-cd1a-4cab-af26-d13ab5f822bd">
 
 #### A: Since it returned `0` records that have `month_year` earlier than the `created_at`, these records should be considered valid data
+
+
+## 2. Interest Analysis
+### Q: Which interests have been present in all month_year dates in our dataset?
+```sql
+
+with cte as (
+select mt.interest_id,  m.interest_name, count(distinct month_year) cnt
+from interest_metrics mt
+join interest_map m on m.id = mt.interest_id 
+group by 1,2 )
+
+select interest_id, interest_name 
+from cte 
+where cnt = (select count(distinct month_year) from interest_metrics);
+```
+#### Output: 
+
+<img width="297" alt="Screenshot 2024-03-10 at 3 29 25 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/ce604987-6c53-442f-9303-9ae6ccac55d6">
+
+```sql
+with cte as (
+select mt.interest_id,  m.interest_name, count(distinct month_year) cnt
+from interest_metrics mt
+join interest_map m on m.id = mt.interest_id 
+group by 1,2 )
+
+select count(distinct interest_id) 
+from cte 
+where cnt = (select count(distinct month_year) from interest_metrics)
+```
+#### Output:
+
+<img width="142" alt="Screenshot 2024-03-10 at 3 30 50 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/e1980798-701e-4f97-bea3-21a8bca6ebbf">
+
+#### `480` interests have been present in all month_year 
+
+### Q: Using this same total_months measure - calculate the cumulative percentage of all records starting at 14 months - which total_months value passes the 90% cumulative percentage value?
+
+```sql
+with cte as(
+select interest_id, count(distinct month_year) cnt
+from interest_metrics
+group by 1), 
+cte1 as(
+select cnt as total_month, count(distinct interest_id) cnt 
+from cte 
+group by 1), 
+cte2 as (
+select total_month, round(sum(cnt)over(order by total_month desc)/sum(cnt)over()*100,2) pct
+from cte1)
+
+select * 
+from cte2 
+where pct>=90
+```
+#### Output:
+<img width="137" alt="Screenshot 2024-03-10 at 7 23 36 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/ed91289e-5cb3-4a12-872b-16d2b393533c">
+
+### Q: If we were to remove all interest_id values which are lower than the total_months value we found in the previous question - how many total data points would we be removing?
+
+```sql
+with cte as(
+select interest_id, count(distinct month_year) total_months 
+from interest_metrics 
+group by 1
+having total_months < 6
+)
+select sum(total_months) 
+from cte 
+
+```
+#### Output: 
+
+<img width="129" alt="Screenshot 2024-03-10 at 7 43 59 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/7add2ace-9db0-4fd0-88bb-2ead8a978d40">
+
+### Q: Does this decision make sense to remove these data points from a business perspective? Use an example where there are all 14 months present to a removed interest example for your arguments - think about what it means to have less months present from a segment perspective.
+-- to be updated
+### Q: After removing these interests - how many unique interests are there for each month?
+
+```sql
+with cte as (
+select  interest_id, count(distinct month_year) total_months 
+from interest_metrics 
+group by 1
+having total_months < 6)
+
+select month_year, count(distinct interest_id) cnt
+from interest_metrics
+where interest_id not in (select interest_id from cte)
+group by 1
+```
+#### Output: 
+
+<img width="146" alt="Screenshot 2024-03-10 at 7 49 49 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/3483094f-6a11-4617-95ed-170664b5a10b">
+
+## 3.Segment Analysis
+### Using our filtered dataset by removing the interests with less than 6 months worth of data, which are the top 10 and bottom 10 interests which have the largest composition values in any month_year? Only use the maximum composition value for each interest but you must keep the corresponding month_year
+
+```sql
+create view removed_id as (
+with cte as (
+select  interest_id, count(distinct month_year) total_months 
+from interest_metrics 
+group by 1
+having total_months < 6)
+select *
+from interest_metrics
+where interest_id not in (select interest_id from cte));
+-- top 10 interests 
+select month_year, i.interest_id, m.interest_name, round(max(composition) ,2) max_composition
+from removed_id i
+join interest_map m on i.interest_id = m.id
+group by 1,2,3
+order by 4 desc 
+limit 10 
+;
+-- bottom 10 interest
+select month_year, i.interest_id, m.interest_name, round(max(composition) ,2) max_composition
+from removed_id i
+join interest_map m on i.interest_id = m.id
+group by 1,2,3
+order by 4 asc
+limit 10 
+;
+
+```
+#### Outputs:
+
+#### Top 10
+
+<img width="492" alt="Screenshot 2024-03-10 at 8 58 08 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/97065ece-459a-439c-a569-0d5f9a0fd4b3">
+
+#### Bottom 10
+
+<img width="492" alt="Screenshot 2024-03-10 at 8 59 57 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/31479914-41b0-44c2-a05e-6f77e9d1392d">
+
+### Which 5 interests had the lowest average ranking value?
+```sql
+
+select i.interest_id, m.interest_name, round(avg(ranking),2) avg_ranking
+from removed_id i
+join interest_map m on i.interest_id = m.id
+group by 1,2 
+order by avg_ranking asc
+limit 5;
+
+```
+### Output: 
+
+<img width="370" alt="Screenshot 2024-03-10 at 9 10 02 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/c91f97b8-ff03-44d3-9375-7ef50c8c6c46">
+
+### Which 5 interests had the largest standard deviation in their percentile_ranking value?
+
+```sql
+
+select i.interest_id, m.interest_name, round(stddev_samp(percentile_ranking),2) std_percentile_ranking
+from removed_id i
+join interest_map m on i.interest_id = m.id
+group by 1,2
+order by std_percentile_ranking desc
+limit 5;
+
+```
+#### Output 
+
+<img width="378" alt="Screenshot 2024-03-10 at 9 52 24 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/b08b5836-01a6-43bb-aa6d-6f40cb36a582">
+
+
+### For the 5 interests found in the previous question - what was minimum and maximum percentile_ranking values for each interest and its corresponding year_month value? Can you describe what is happening for these 5 interests?
+```sql
+with cte as (
+select i.interest_id, m.interest_name, round(stddev_samp(percentile_ranking),2) std_percentile_ranking
+from removed_id i
+join interest_map m on i.interest_id = m.id
+group by 1,2 
+order by 3 desc
+limit 5
+), 
+cte1 as (
+select i.interest_id, m.interest_name, percentile_ranking, month_year, rank()over(partition by i.interest_id order by percentile_ranking desc) r
+from interest_metrics i
+join interest_map m on i.interest_id = m.id
+where interest_id in (select interest_id from cte)
+),
+cte2 as (
+select i.interest_id, m.interest_name, percentile_ranking, month_year, rank()over(partition by i.interest_id order by percentile_ranking asc) r
+from interest_metrics i
+join interest_map m on i.interest_id = m.id
+where interest_id in (select interest_id from cte)
+)
+select a.interest_id, a.interest_name, a.percentile_ranking max_percentile_ranking, a.month_year max_month_year, b.percentile_ranking min_percentile_ranking, b.month_year min_month_year
+from cte1 a 
+join cte2 b on a.interest_id = b.interest_id and a.r = 1 and b.r=1
+
+```
+#### Output: 
+<img width="794" alt="Screenshot 2024-03-10 at 10 37 55 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/3d973a21-698e-433f-9515-7d244d52ce40">
+
+### How would you describe our customers in this segment based off their composition and ranking values? What sort of products or services should we show to these customers and what should we avoid?
+
+
+

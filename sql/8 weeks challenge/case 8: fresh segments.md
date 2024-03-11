@@ -212,7 +212,7 @@ group by 1
 <img width="146" alt="Screenshot 2024-03-10 at 7 49 49 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/3483094f-6a11-4617-95ed-170664b5a10b">
 
 ## 3.Segment Analysis
-### Using our filtered dataset by removing the interests with less than 6 months worth of data, which are the top 10 and bottom 10 interests which have the largest composition values in any month_year? Only use the maximum composition value for each interest but you must keep the corresponding month_year
+### Q: Using our filtered dataset by removing the interests with less than 6 months worth of data, which are the top 10 and bottom 10 interests which have the largest composition values in any month_year? Only use the maximum composition value for each interest but you must keep the corresponding month_year
 
 ```sql
 create view removed_id as (
@@ -252,7 +252,7 @@ limit 10
 
 <img width="492" alt="Screenshot 2024-03-10 at 8 59 57 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/31479914-41b0-44c2-a05e-6f77e9d1392d">
 
-### Which 5 interests had the lowest average ranking value?
+### Q: Which 5 interests had the lowest average ranking value?
 ```sql
 
 select i.interest_id, m.interest_name, round(avg(ranking),2) avg_ranking
@@ -263,7 +263,7 @@ order by avg_ranking asc
 limit 5;
 
 ```
-### Output: 
+#### Output: 
 
 <img width="370" alt="Screenshot 2024-03-10 at 9 10 02 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/c91f97b8-ff03-44d3-9375-7ef50c8c6c46">
 
@@ -284,7 +284,7 @@ limit 5;
 <img width="378" alt="Screenshot 2024-03-10 at 9 52 24 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/b08b5836-01a6-43bb-aa6d-6f40cb36a582">
 
 
-### For the 5 interests found in the previous question - what was minimum and maximum percentile_ranking values for each interest and its corresponding year_month value? Can you describe what is happening for these 5 interests?
+### Q: For the 5 interests found in the previous question - what was minimum and maximum percentile_ranking values for each interest and its corresponding year_month value? Can you describe what is happening for these 5 interests?
 ```sql
 with cte as (
 select i.interest_id, m.interest_name, round(stddev_samp(percentile_ranking),2) std_percentile_ranking
@@ -314,7 +314,7 @@ join cte2 b on a.interest_id = b.interest_id and a.r = 1 and b.r=1
 #### Output: 
 <img width="794" alt="Screenshot 2024-03-10 at 10 37 55 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/3d973a21-698e-433f-9515-7d244d52ce40">
 
-### How would you describe our customers in this segment based off their composition and ranking values? What sort of products or services should we show to these customers and what should we avoid?
+### Q: How would you describe our customers in this segment based off their composition and ranking values? What sort of products or services should we show to these customers and what should we avoid?
 
 
 

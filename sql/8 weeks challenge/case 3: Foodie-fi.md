@@ -305,5 +305,5 @@ with cte as(
 | 3           | 1       | basic monthly | 2020-09-20 | 2020-12-31 | 9.90    |
 ```
 
-<img width="768" alt="Screenshot 2024-03-12 at 12 03 34 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/5559a208-1c46-4965-a79c-280045931e82">
+
 

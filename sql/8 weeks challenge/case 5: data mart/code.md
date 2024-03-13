@@ -2,7 +2,7 @@
 ## Inroduction:
 #### Data Mart is Danny’s latest venture and after running international operations for his online supermarket that specialises in fresh produce 
 #### In June 2020 - large scale supply changes were made at Data Mart. All Data Mart products now use sustainable packaging methods in every single step from the farm all the way to the customer. Danny needs your help to quantify the impact of this change on the sales performance for Data Mart and it’s separate business areas
-
+#### Source: <https://8weeksqlchallenge.com/case-study-5/>
 
 ## Available Data 
 #### Weekly Sales

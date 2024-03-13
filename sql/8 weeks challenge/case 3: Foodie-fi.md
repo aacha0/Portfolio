@@ -282,6 +282,40 @@ with cte as(
 
     select * from payment_details;
 ```
+#### More efficient code 
+```sql
+with year as (
+select customer_id, s.plan_id, plan_name, start_date,price
+from subscriptions s
+join plans p
+on s.plan_id = p.plan_id
+where year(start_date) = '2020' and s.plan_id !=0  
+order by customer_id, s.plan_id ),
+  end_date as(
+  select customer_id, plan_id, plan_name, start_date,
+  case when plan_id != 4 and lead(start_date,1)over(partition by customer_id) is null then '2020-12-31' 
+  else lead(start_date,1)over(partition by customer_id) end as end_date,price
+from year) 
+
+select * 
+from end_date
+jOIN (
+        SELECT 0 as n UNION ALL
+        SELECT 1 as n UNION ALL
+        SELECT 2 as n UNION ALL
+        SELECT 3 as n UNION ALL
+        SELECT 4 as n UNION ALL
+        SELECT 5 as n UNION ALL
+        SELECT 6 as n UNION ALL
+        SELECT 7 as n UNION ALL
+        SELECT 8 as n UNION ALL
+        SELECT 9 as n UNION ALL
+        SELECT 10 as n UNION ALL
+        SELECT 11 as n UNION ALL
+        SELECT 12 as n
+      ) as n
+      ON n.n <= 12
+```
 ---
 
 #### Output: 

@@ -247,39 +247,63 @@ with cte as(
 ### - once a customer churns they will no longer make payments
 
 ```sql
-with year as (
-select customer_id, s.plan_id, plan_name, start_date,price
-from subscriptions s
-join plans p
-on s.plan_id = p.plan_id
-where year(start_date) = '2020' and s.plan_id !=0  
-order by customer_id, s.plan_id ),
-  end_date as(
-  select customer_id, plan_id, plan_name, start_date,
-  case when plan_id != 4 and lead(start_date,1)over(partition by customer_id) is null then '2020-12-31' 
-  else lead(start_date,1)over(partition by customer_id) end as end_date,price
-from year) 
+  create table payment_details as
+    with RECURSIVE cte as(
+      select customer_id, s.plan_id, plan_name, cast(start_date as date) start_date
+      ,
+      lead(start_date, 1) over(partition by customer_id) end_date, 		price
+      from subscriptions s
+      join plans p
+      on s.plan_id =p.plan_id
+      where year(start_date) = '2020' and plan_name != 'trial'),
+      cte1 as (
+        select customer_id, plan_id, plan_name, start_date, 
+        case when plan_id = 4 then null 
+        else coalesce(end_date, '2020-12-31') end end_date, price 
+        from cte),
+      cte2 as(
+        select customer_id, plan_id, plan_name, start_date, end_date, price 
+        from cte1
+        
+        union all
+        select customer_id, plan_id, plan_name, date_add(start_date, interval 1 month) start_date, end_date, price 
+        from cte2
+        where end_date >= date_add(start_date, interval 1 month)
+        and plan_name != 'pro annual'
+        ),
+        cte3 as(
+          select *, lag(plan_id,1)over(partition by customer_id order by start_date)prev_plan,  lag(price,1)over(partition by customer_id order by start_date) prev_payment, (dense_rank() over(partition by customer_id order by start_date) ) ranking
+          from cte2),
+         cte4 as(
+           select customer_id, plan_id, plan_name, start_date, end_date, 
+           case when prev_plan != plan_id and plan_id != 4 then price - prev_payment else price end as price
+           from cte3)
+     select * from cte4;
 
-select * 
-from end_date
-jOIN (
-        SELECT 0 as n UNION ALL
-        SELECT 1 as n UNION ALL
-        SELECT 2 as n UNION ALL
-        SELECT 3 as n UNION ALL
-        SELECT 4 as n UNION ALL
-        SELECT 5 as n UNION ALL
-        SELECT 6 as n UNION ALL
-        SELECT 7 as n UNION ALL
-        SELECT 8 as n UNION ALL
-        SELECT 9 as n UNION ALL
-        SELECT 10 as n UNION ALL
-        SELECT 11 as n UNION ALL
-        SELECT 12 as n
-      ) as n
-      ON n.n <= 12
+    select * from payment_details;
 ```
+---
+
 #### Output: 
+
+| customer_id | plan_id | plan_name     | start_date | end_date   | price   |
+| ----------- | ------- | ------------- | ---------- | ---------- | ------- |
+| 1           | 1       | basic monthly | 2020-08-08 | 2020-12-31 | 9.90    |
+| 1           | 1       | basic monthly | 2020-09-08 | 2020-12-31 | 9.90    |
+| 1           | 1       | basic monthly | 2020-10-08 | 2020-12-31 | 9.90    |
+| 1           | 1       | basic monthly | 2020-11-08 | 2020-12-31 | 9.90    |
+| 1           | 1       | basic monthly | 2020-12-08 | 2020-12-31 | 9.90    |
+| 2           | 3       | pro annual    | 2020-09-27 | 2020-12-31 | 199.00  |
+| 3           | 1       | basic monthly | 2020-01-20 | 2020-12-31 | 9.90    |
+| 3           | 1       | basic monthly | 2020-02-20 | 2020-12-31 | 9.90    |
+| 3           | 1       | basic monthly | 2020-03-20 | 2020-12-31 | 9.90    |
+| 3           | 1       | basic monthly | 2020-04-20 | 2020-12-31 | 9.90    |
+| 3           | 1       | basic monthly | 2020-05-20 | 2020-12-31 | 9.90    |
+| 3           | 1       | basic monthly | 2020-06-20 | 2020-12-31 | 9.90    |
+| 3           | 1       | basic monthly | 2020-07-20 | 2020-12-31 | 9.90    |
+| 3           | 1       | basic monthly | 2020-08-20 | 2020-12-31 | 9.90    |
+| 3           | 1       | basic monthly | 2020-09-20 | 2020-12-31 | 9.90    |
+```
 
 <img width="768" alt="Screenshot 2024-03-12 at 12 03 34 AM" src="https://github.com/aacha0/Portfolio/assets/148589444/5559a208-1c46-4965-a79c-280045931e82">
 

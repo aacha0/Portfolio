@@ -389,20 +389,91 @@ with cte as (
 ### - customer_type
 
 ```sql
- select  distinct a.region, (b.region_sum  - a.region_sum) difference, round((b.region_sum  - a.region_sum)/a.region_sum *100,2) percentage_diff
-     from comparison a 
-     join comparison b 
-     on a.region = b.region
-     where a.new_packaging = 'before' and b.new_packaging = 'after'
-     order by difference ;
-```
+ DROP TABLE IF EXISTS before_after;
+    Create table before_after(
+    select *, 
+    case when week_date < '2020-06-15' then 'before' else 'after' end as new_packaging 
+    from clean_weekly_sales);
+    
+DROP TABLE IF EXISTS comparison;
+Create table comparison(
+  with cte as(
+select *, dense_rank()over(order by week_number desc) ranking 
+from before_after  
+where new_packaging = 'before' 
+union
+select *, dense_rank()over(order by week_number) ranking 
+from before_after  
+where new_packaging = 'after')
+select week_date, ranking, region, platform, age_band, demographic, customer_type,new_packaging, 
+sum(sales)over(partition by region,new_packaging)region_sum, sum(sales)over(partition by platform,new_packaging)platform_sum,
+sum(sales)over(partition by age_band,new_packaging)age_band_sum,
+sum(sales)over(partition by demographic,new_packaging)demographic_sum, sum(sales)over(partition by customer_type,new_packaging)customer_type_sum
+  from cte
+  where ranking between 1 and 12);
 
-| region        | difference  | percentage_diff |
-| ------------- | ----------- | --------------- |
-| OCEANIA       | -2074653413 | -47.61          |
-| AFRICA        | -1596735571 | -48.43          |
-| ASIA          | -1384312029 | -46.64          |
-| USA           | -627900072  | -48.52          |
-| CANADA        | -397496324  | -48.73          |
-| SOUTH AMERICA | -192077326  | -47.96          |
-| EUROPE        | -116342125  | -50.50          |
+
+
+
+#region differences 
+ select  distinct a.region, (b.region_sum  - a.region_sum) difference, round((b.region_sum  - a.region_sum)/a.region_sum *100,2) percentage_diff
+ from comparison a 
+ join comparison b 
+ on a.region = b.region
+ where a.new_packaging = 'before' and b.new_packaging = 'after'
+ order by difference ;
+
+ #age band differences 
+ select  distinct a.age_band, b.age_band_sum-a.age_band_sum difference,round((b.age_band_sum-a.age_band_sum)/b.age_band_sum*100,2) percentage_difference
+ from comparison a 
+ join comparison b 
+ on a.age_band = b.age_band
+ where a.new_packaging = 'before' and b.new_packaging = 'after'
+ order by difference ;
+
+ #platform differences
+select  distinct a.platform, b.platform_sum-a.platform_sum difference, round((b.platform_sum-a.platform_sum)/b.platform_sum*100,2) percentage_difference
+ from comparison a 
+ join comparison b 
+ on a.platform = b.platform
+ where a.new_packaging = 'before' and b.new_packaging = 'after'
+ order by difference ;
+ 
+#demographic differences
+select   distinct a.demographic, b.demographic_sum-a.demographic_sum as difference, round((b.demographic_sum-a.demographic_sum)/b.demographic_sum*100,2) percentage_difference
+ from comparison a 
+ join comparison b 
+ on a.demographic = b.demographic
+ and a.new_packaging = 'before' and b.new_packaging = 'after'
+ order by difference ;
+ 
+ #customer type differences
+select  distinct a.customer_type, b.customer_type_sum-a.customer_type_sum as difference, round((b.customer_type_sum-a.customer_type_sum)/b.customer_type_sum*100,2) percentage_difference
+ from comparison a 
+ join comparison b 
+ on a.customer_type = b.customer_type
+ and a.new_packaging = 'before' and b.new_packaging = 'after'
+ order by difference ;
+ 
+```
+#### Difference by Region
+
+<img width="266" alt="Screenshot 2024-03-14 at 10 23 27 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/7ca5165f-14fb-471b-a692-3764fe77ae04">
+
+#### Difference by Platform
+
+<img width="258" alt="Screenshot 2024-03-14 at 10 24 43 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/1d3d980c-db79-452d-9897-f04a28a16576">
+
+
+####  Difference by age_band
+
+<img width="308" alt="Screenshot 2024-03-14 at 10 24 02 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/235e9705-b907-4575-98fe-33ecc04282a5">
+
+####  Difference by demographic
+
+<img width="308" alt="Screenshot 2024-03-14 at 10 25 03 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/83f95bc9-9750-430e-b1ec-8aa24500b800">
+
+####  Difference by customer_type
+
+<img width="308" alt="Screenshot 2024-03-14 at 10 25 25 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/b4a5cd0d-8c22-4afc-8b85-e232af510d1c">
+

@@ -33,12 +33,14 @@ from customer_orders;
 ### Q: How many unique customer orders were made?
 
 ```sql
-select count(distinct customer_id) num_customers
+select count(distinct order_id) num_orders
 from customer_orders
 ;
 ```
 #### Output:
-<img width="97" alt="Screenshot 2024-03-16 at 7 25 43 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/4c908bbd-ce67-404e-86f6-18ed906e5ef6">
+
+<img width="101" alt="Screenshot 2024-03-16 at 9 38 44 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/4851a232-8699-488b-ab54-1e6c6d47fdf1">
+
 
 ### Q: How many successful orders were delivered by each runner?
 ```sql
@@ -49,14 +51,16 @@ update runner_orders
 set cancellation = null 
 where cancellation =  '' or cancellation = 'null';
 
--- count how many orders that were not cancelled
-select count(distinct order_id) num_delivered_orders
+-- count how many orders that were not canceled
+select runner_id,count(distinct order_id) num_delivered_orders
 from runner_orders
-where cancellation is null;
+where cancellation is null
+group by 1;
 ```
 #### Output:
 
-<img width="138" alt="Screenshot 2024-03-16 at 7 37 43 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/04b76b5e-6c42-403c-a59c-1b1c39a8c110">
+<img width="190" alt="Screenshot 2024-03-16 at 9 40 16 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/349137dc-3f07-47e3-8b09-7bece11693e6">
+
 
 ### Q: How many of each type of pizza was delivered?
 
@@ -94,7 +98,62 @@ group by 1,2
 
 
 ### Q: What was the maximum number of pizzas delivered in a single order?
+
+```sql
+with cte as(
+select c.order_id, count(c.customer_id) num_pizzas
+from customer_orders c
+join runner_orders r on c.order_id = r.order_id 
+where r.cancellation is  null 
+group by 1 )
+select *
+from cte 
+where num_pizzas in (select max(num_pizzas) from cte)
+```
+
+#### Output: 
+<img width="148" alt="Screenshot 2024-03-16 at 9 49 12 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/0ab071d8-7b18-4bb7-870a-c322d523a4f0">
+
+
 ### Q: For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
+
+```sql
+-- cleand the data
+-- replaced  empty string or 'null' values from extras and exclusions columns with NULL
+
+update customer_orders 
+set exclusions = null 
+where exclusions = '' or exclusions = 'null';
+
+update customer_orders 
+set extras = null 
+where extras = '' or extras = 'null';
+
+-- created a view to store orders that were delivered 
+drop view if exists delivered_orders;
+create view delivered_orders as(
+select c.*
+from customer_orders c
+join runner_orders r on c.order_id = r.order_id 
+where r.cancellation is null) ;
+
+select customer_id, 
+count(case when exclusions is not null or extras is not null then order_id else null end) adjusted_orders,
+count(case when exclusions is  null and extras is  null then order_id else null end) no_change_orders, 
+count(order_id) 
+from delivered_orders
+group by 1
+
+```
+#### Output: 
+
+<img width="292" alt="Screenshot 2024-03-16 at 10 01 40 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/301d13b4-e867-4156-bef6-f8c1da0f7da8">
+
 ### Q: How many pizzas were delivered that had both exclusions and extras?
+
+<img width="223" alt="image" src="https://github.com/aacha0/Portfolio/assets/148589444/b1c78654-48e4-4f69-9200-1c1abf929d44">
+
+
 ### Q: What was the total volume of pizzas ordered for each hour of the day?
+
 ### Q: What was the volume of orders for each day of the week?

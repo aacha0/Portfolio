@@ -415,11 +415,12 @@ select order_id, customer_id, pizza_id,
 substring_index(trim(exclusions),',',1) exclu1, 
 case when substring_index(trim(exclusions),',',1) = substring_index(trim(exclusions),',',-1) then null else substring_index(trim(exclusions),',',-1) end exclu2,
 coalesce(substring_index(trim(extras),',',1),'') extra1, 
-case when substring_index(trim(extras),',',1) = substring_index(trim(extras),',',-1) then null else substring_index(trim(extras),',',-1) end extra2
+case when substring_index(trim(extras),',',1) = substring_index(trim(extras),',',-1) then null else substring_index(trim(extras),',',-1) end extra2, 
+row_number()over(partition by order_id, pizza_id) r
 from customer_orders)
-select order_id, customer_id, a.pizza_id,b.pizza_name,
+select order_id, customer_id, a.pizza_id,b.pizza_name, 
  concat(c.topping_name,coalesce(concat(', ',d.topping_name),''))exclusions, 
-  concat(e.topping_name,coalesce(concat(', ',f.topping_name),''))extras
+  concat(e.topping_name,coalesce(concat(', ',f.topping_name),''))extras,r
 from cte a 
 join pizza_names b on a.pizza_id = b.pizza_id
 left join pizza_toppings c on c.topping_id = a.exclu1
@@ -439,7 +440,82 @@ from customer_orders_details;
 
 ### Q: Generate an alphabetically ordered comma separated ingredient list for each pizza order from the customer_orders table and add a 2x in front of any relevant ingredients
 ### Q: For example: "Meat Lovers: 2xBacon, Beef, ... , Salami"
+```sql
+with cte as(
+select c.*,
+substring_index(trim(exclusions),',',1) exclu1, 
+case when substring_index(trim(exclusions),',',1) = substring_index(trim(exclusions),',',-1) then null else substring_index(trim(exclusions),',',-1) end exclu2,
+substring_index(trim(extras),',',1) extra1, 
+case when substring_index(trim(extras),',',1) = substring_index(trim(extras),',',-1) then null else substring_index(trim(extras),',',-1) end extra2,
+ t.topping_name
+from customer_orders_details c 
+join toppings t on c.pizza_id = t.pizza_id
+order by 1),
+cte1 as(
+(select order_id, customer_id, pizza_id, pizza_name, r,
+case when topping_name = exclu1 or topping_name = trim(leading ' ' from exclu2) then null else topping_name end as topping
+from cte)
+union all 
+(select distinct order_id, customer_id, pizza_id,pizza_name, r, extra1
+from cte 
+where extra1 is not null )
+union all
+(select distinct order_id, customer_id, pizza_id, pizza_name, r, trim(leading ' ' from extra2)
+from cte 
+where extra2 is not null )
+) ,
+cte2 as (
+select order_id, customer_id, pizza_id,pizza_name, r, topping, count(topping) cnt,
+case when count(topping) >1  then concat(count(topping),'X',topping) else topping end as num_topping
+from cte1
+group by 1,2,3,4,5,6
+having cnt >0 
+order by cnt
+) 
+select order_id, customer_id, 
+concat(pizza_name, ' : ', group_concat(num_topping order by topping)) as order_details
+from cte2
+group by order_id, customer_id, pizza_name, r
+```
+#### Output: 
+
+<img width="665" alt="Screenshot 2024-03-18 at 1 59 50 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/c463a943-d195-419c-81bb-3ed3ffee7f7d">
 
 ### Q: What is the total quantity of each ingredient used in all delivered pizzas sorted by most frequent first?
 
+```sql
+with cte as(
+select c.*,
+substring_index(trim(exclusions),',',1) exclu1, 
+case when substring_index(trim(exclusions),',',1) = substring_index(trim(exclusions),',',-1) then null else substring_index(trim(exclusions),',',-1) end exclu2,
+substring_index(trim(extras),',',1) extra1, 
+case when substring_index(trim(extras),',',1) = substring_index(trim(extras),',',-1) then null else substring_index(trim(extras),',',-1) end extra2,
+ t.topping_name
+from customer_orders_details c 
+join toppings t on c.pizza_id = t.pizza_id
+order by 1),
+cte1 as(
+(select order_id, customer_id, pizza_id, pizza_name, r,
+case when topping_name = exclu1 or topping_name = trim(leading ' ' from exclu2) then null else topping_name end as topping
+from cte)
+union all 
+(select distinct order_id, customer_id, pizza_id,pizza_name, r, extra1
+from cte 
+where extra1 is not null )
+union all
+(select distinct order_id, customer_id, pizza_id, pizza_name, r, trim(leading ' ' from extra2)
+from cte 
+where extra2 is not null )
+) 
+select topping, count(topping) cnt
+from cte1
+where topping is not null
+group by 1
+order by cnt desc
+```
+#### Output: 
 
+<img width="151" alt="Screenshot 2024-03-18 at 2 03 57 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/52740ad4-5720-45db-bf62-64e495b72a69">
+
+
+#### Bacon is the most popular ingredient. Onions, Peppers, Tomatoes, and Tomato Sauce are tied to the last place. 

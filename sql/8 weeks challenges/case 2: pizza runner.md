@@ -518,4 +518,129 @@ order by cnt desc
 <img width="151" alt="Screenshot 2024-03-18 at 2 03 57 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/52740ad4-5720-45db-bf62-64e495b72a69">
 
 
-#### Bacon is the most popular ingredient. Onions, Peppers, Tomatoes, and Tomato Sauce are tied to the last place. 
+#### A: Bacon is the most popular ingredient. Onions, Peppers, Tomatoes, and Tomato Sauce are tied to the last place. 
+
+## 4. Pricing and Ratings
+### Q: If a Meat Lovers pizza costs $12 and Vegetarian costs $10 and there were no charges for changes - how much money has Pizza Runner made so far if there are no delivery fees?
+```sql
+drop table if exists price;
+create table price (
+pizza_id int,
+pizza_name varchar(50), 
+price decimal (10,2));
+
+insert into  price (pizza_id,pizza_name, price) 
+values ('1','Meatlovers','12'),('2','Vegetarian','10') ;
+
+with cte as(
+select o.pizza_id, p.pizza_name, p.price
+from delivered_orders o 
+join price p on o.pizza_id = p.pizza_id 
+) 
+select sum(price) revenue , c![Uploading Screenshot 2024-03-18 at 3.47.17 PM.png…]()
+ount(*) num_sold_pizzas from cte
+```
+#### Output: 
+
+<img width="151" alt="Screenshot 2024-03-18 at 3 47 27 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/a03ac934-2476-4735-8912-d64b50104b17">
+
+### Q: What if there was an additional $1 charge for any pizza extras?
+#### Add cheese is $1 extra
+```sql
+alter table price 
+add column extra decimal (10,2) default '1.00';
+
+
+with cte as (
+select order_id, o.pizza_id, o.pizza_name, p.price, 
+case when extras like '%Cheese%' then length(extras)-length(replace(extras, ',',''))+2 
+else length(extras)-length(replace(extras, ',',''))+1 end as extras
+from customer_orders_details o 
+join price p on o.pizza_id = p.pizza_id)
+
+select sum(price)+sum(extras) revenue 
+from cte
+```
+#### Output: 
+
+<img width="50" alt="Screenshot 2024-03-18 at 4 11 33 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/6129df1b-5f07-4f98-868c-a0587ffb08ef">
+
+#### Note: I assume the no more than one extra cheese can be an add-on
+
+### Q: The Pizza Runner team now wants to add an additional ratings system that allows customers to rate their runner, how would you design an additional table for this new dataset - generate a schema for this new table and insert your own data for ratings for each successful customer order between 1 to 5.
+```sql
+drop table if exists rating;
+create table rating (
+order_id int, 
+customer_id int, 
+runner_rating int ) ;
+
+insert into rating (order_id, customer_id, runner_rating)
+values ('1','101','4'), ('2','101','4'),('3','102','4'),('4','103','5'), 
+('5','104','4'), ('7','105','3'), ('8','102','2'), ('10','104','2');
+```
+#### Output: 
+
+<img width="200" alt="Screenshot 2024-03-18 at 4 26 18 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/5a736de6-7dac-4f60-ad37-484a80b0de77">
+
+### Q: Using your newly generated table - can you join all of the information together to form a table which has the following information for successful deliveries?
+#### customer_id
+#### order_id
+#### runner_id
+#### rating
+#### order_time
+#### pickup_time
+#### Time between order and pickup
+#### Delivery duration
+#### Average speed
+#### Total number of pizzas
+
+```sql
+select o.customer_id, o.order_id, ro.runner_id, r.runner_rating,
+ o.order_time, ro.pickup_time, timestampdiff(minute,o.order_time ,ro.pickup_time) time_btw_order_pickup,
+ ro.duration, round(ro.distance/ro.duration*60,2) speed, count(o.order_id) num_pizzas
+ from delivered_orders o 
+ join rating r on o.order_id = r.order_id
+ join runner_orders ro on ro.order_id =o.order_id
+group by 1,2,3,4,5,6,8,9 
+ ```
+#### Output: 
+
+<img width="831" alt="Screenshot 2024-03-18 at 4 36 09 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/f8d17bd2-94d6-4a71-b24f-6d4efef04305">
+
+#### Q: If a Meat Lovers pizza was $12 and Vegetarian $10 fixed prices with no cost for extras and each runner is paid $0.30 per kilometre traveled - how much money does Pizza Runner have left over after these deliveries?
+
+```sql
+with cte as (
+select order_id, sum(price) revenue 
+from delivered_orders o 
+join price p on o.pizza_id = p.pizza_id
+group by 1) 
+select sum(c.revenue) rev, sum(r.distance*0.3) delivery_cost, round(sum(c.revenue - r.distance*0.3),2) revenue_minus_delivery
+from cte c 
+join runner_orders r on c.order_id = r.order_id; 
+```
+#### Output: 
+
+<img width="299" alt="Screenshot 2024-03-18 at 4 48 51 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/75962e19-16d2-427d-bbdf-888fbef5dcca">
+
+## 5. Bonus Questions
+If Danny wants to expand his range of pizzas - how would this impact the existing data design? Write an INSERT statement to demonstrate what would happen if a new Supreme pizza with all the toppings was added to the Pizza Runner menu?
+
+```sql
+insert into pizza_names (pizza_name)
+value('3','Supreme Pizza');
+
+insert into pizza_recipes (pizza_id,toppings)
+values('3', '1,3,4,6,8,9,12')
+```
+#### Output: 
+##### Updated pizza_names table
+
+<img width="136" alt="Screenshot 2024-03-18 at 4 57 23 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/93cab0e6-9a09-4afd-bec6-f26d119be314">
+
+##### Updated pizza_recipes table
+<img width="165" alt="Screenshot 2024-03-18 at 4 58 14 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/7e9a4bfb-4038-4d86-9c01-b53d881443be">
+
+
+

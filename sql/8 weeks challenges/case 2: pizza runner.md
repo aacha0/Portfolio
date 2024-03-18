@@ -320,7 +320,9 @@ group by 1
 
 ```sql
 -- ungrouped topping ids
+drop view if exists toppings;
 create view toppings as (
+with cte as(
 with recursive num as(
 select 1 as n 
 union 
@@ -330,13 +332,16 @@ select pizza_id, substring_index(substring_index(toppings,',',n),',',-1) topping
 from pizza_recipes 
 join num 
 on n<= length(toppings)-length(replace(toppings,',',''))+1
-order by 1
+order by 1)
+select pizza_id, topping, topping_name
+from cte c 
+join pizza_toppings t on c.topping = t.topping_id
 ) ;
 
 
-select n.pizza_name, group_concat(p.topping_name) toppings
+
+select n.pizza_name, group_concat(topping_name) toppings
 from toppings t 
-join pizza_toppings p on t.topping = p.topping_id 
 join pizza_names n on n.pizza_id = t.pizza_id
 group by 1
 
@@ -400,9 +405,41 @@ where num_pizzas in (select max(num_pizzas) from cte)
   ### Meat Lovers - Exclude Beef
   ### Meat Lovers - Extra Bacon
   ### Meat Lovers - Exclude Cheese, Bacon - Extra Mushroom, Peppers
-  
+
+```sql
+-- create a view to store table that have exclusions and extras to be in topping_name instead of topping_id
+drop view if exists customer_orders_details;
+create view customer_orders_details as(
+with cte as(
+select order_id, customer_id, pizza_id, 
+substring_index(trim(exclusions),',',1) exclu1, 
+case when substring_index(trim(exclusions),',',1) = substring_index(trim(exclusions),',',-1) then null else substring_index(trim(exclusions),',',-1) end exclu2,
+coalesce(substring_index(trim(extras),',',1),'') extra1, 
+case when substring_index(trim(extras),',',1) = substring_index(trim(extras),',',-1) then null else substring_index(trim(extras),',',-1) end extra2
+from customer_orders)
+select order_id, customer_id, a.pizza_id,b.pizza_name,
+ concat(c.topping_name,coalesce(concat(', ',d.topping_name),''))exclusions, 
+  concat(e.topping_name,coalesce(concat(', ',f.topping_name),''))extras
+from cte a 
+join pizza_names b on a.pizza_id = b.pizza_id
+left join pizza_toppings c on c.topping_id = a.exclu1
+left join pizza_toppings d on d.topping_id = a.exclu2
+left join pizza_toppings e on e.topping_id = a.extra1
+left join pizza_toppings f on f.topping_id = a.extra2) ;
+
+select order_id, customer_id, 
+case when exclusions is null and extras is null then pizza_name
+when exclusions is not null and extras is null then concat(pizza_name,' - Exclude ',exclusions)
+ when extras is not null and exclusions is null then concat(pizza_name,' - Extra ',extras)
+ else concat(pizza_name,' - Exclude ',exclusions, ' - Extra ',extras) end as customer_orders
+from customer_orders_details;
+```
+#### Output: 
+<img width="549" alt="Screenshot 2024-03-17 at 10 48 30 PM" src="https://github.com/aacha0/Portfolio/assets/148589444/5c43a271-b34b-4f80-937a-a360db942bb4">
+
 ### Q: Generate an alphabetically ordered comma separated ingredient list for each pizza order from the customer_orders table and add a 2x in front of any relevant ingredients
 ### Q: For example: "Meat Lovers: 2xBacon, Beef, ... , Salami"
+
 ### Q: What is the total quantity of each ingredient used in all delivered pizzas sorted by most frequent first?
 
 
